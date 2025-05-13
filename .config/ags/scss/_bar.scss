@@ -10,16 +10,31 @@ $bar_ws_width_focus_active: 2.045rem;
 
 .bar-height {
     min-height: 2.727rem;
+    margin: 0.5rem 1rem;
 }
 
 .bar-bg {
     background-color: $layer0;
     min-height: 2.727rem;
+    border-radius: 1.364rem;
+    margin: 0.5px 0 0 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    border: 3.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2),
+                0 0 20px rgba(0, 0, 0, 0.1),
+                0 0 30px rgba(0, 0, 0, 0.05);
 }
 
 .bar-bg-focus {
     background-color: $layer0;
     min-height: 1.364rem;
+    border-radius: 1.364rem;
+    margin: 0.5px 0 0 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    border: 3.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2),
+                0 0 20px rgba(0, 0, 0, 0.1),
+                0 0 30px rgba(0, 0, 0, 0.05);
 }
 
 .bar-bg-nothing {
@@ -40,7 +55,10 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-group {
-    background-color: $layer1;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0.682rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .bar-group-borderless {
@@ -67,6 +85,8 @@ $bar_ws_width_focus_active: 2.045rem;
 .bar-group-standalone {
     @include bar-group-rounding;
     -gtk-outline-radius: 1.364rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .bar-group-round {
@@ -114,13 +134,15 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-ws-active {
-    background-color: $workspaceLayer3;
+    background-color: mix($workspaceLayer3, black, 90%);
     color: $workspaceOnLayer3;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .bar-ws-occupied {
-    background-color: $layer2;
+    background-color: mix($layer2, black, 90%);
     color: $workspaceOnLayer2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 // Focus is the bar mode name, not the workspace state!
@@ -139,8 +161,12 @@ $bar_ws_width_focus_active: 2.045rem;
     background-color: $secondaryContainer;
 }
 
-.bar-clock-box {
-    margin: 0rem 0.682rem;
+.bar-clock-box, .bar-weather-box {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
+    /* Retain any existing styles for pill shape, background, etc. */
 }
 
 .bar-time {
@@ -377,6 +403,8 @@ $bar_ws_width_focus_active: 2.045rem;
     @include full-rounding;
     margin: 0.137rem 0rem;
     padding: 0rem 0.682rem;
+    background-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bar-systray-item {
@@ -394,11 +422,14 @@ $bar_ws_width_focus_active: 2.045rem;
     @include element_decel;
     margin: 0.273rem;
     padding: 0rem 0.614rem;
+    background-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bar-statusicons-active {
-    background-color: $layer0Active;
+    background-color: mix($layer0Active, black, 90%);
     color: $onLayer0Active;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .bar-util-btn {
@@ -406,8 +437,9 @@ $bar_ws_width_focus_active: 2.045rem;
     @include element_decel;
     min-height: 1.77rem;
     min-width: 1.77rem;
-    background-color: $utilsLayer2;
+    background-color: mix($utilsLayer2, black, 90%);
     color: $utilsOnLayer2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bar-util-btn-borderless {

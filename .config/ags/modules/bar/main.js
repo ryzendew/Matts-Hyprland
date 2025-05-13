@@ -9,6 +9,8 @@ import System from "./normal/system.js";
 import { enableClickthrough } from "../.widgetutils/clickthrough.js";
 import { RoundedCorner } from "../.commonwidgets/cairo_roundedcorner.js";
 import { currentShellMode } from '../../variables.js';
+import { BarClock, WeatherWidget } from "./normal/system.js";
+import { setupCursorHover } from "../.widgetutils/cursorhover.js";
 
 const NormalOptionalWorkspaces = async () => {
     try {
@@ -34,6 +36,25 @@ const FocusOptionalWorkspaces = async () => {
     }
 };
 
+const ArchRofiButton = () => Widget.Button({
+    className: 'dock-app-btn dock-app-btn-animate',
+    tooltipText: 'Open HyprMenu',
+    child: Widget.Box({
+        homogeneous: true,
+        className: 'dock-app-icon',
+        child: Widget.Icon({
+            icon: '/home/matt/Pictures/logo/Arch-linux-logo.png',
+            size: 24,
+        }),
+    }),
+    onClicked: () => {
+        import('resource:///com/github/Aylur/ags/utils.js').then(Utils => {
+            Utils.execAsync('hyprmenu').catch(print);
+        });
+    },
+    setup: setupCursorHover,
+});
+
 export const Bar = async (monitor = 0) => {
     const SideModule = (children) => Widget.Box({
         className: 'bar-sidemodule',
@@ -46,19 +67,26 @@ export const Bar = async (monitor = 0) => {
             const minHeight = styleContext.get_property('min-height', Gtk.StateFlags.NORMAL);
             // execAsync(['bash', '-c', `hyprctl keyword monitor ,addreserved,${minHeight},0,0,0`]).catch(print);
         },
-        startWidget: (await WindowTitle(monitor)),
+        startWidget: Widget.Box({
+            children: [ArchRofiButton()],
+        }),
         centerWidget: Widget.Box({
             className: 'spacing-h-4',
             children: [
-                SideModule([Music()]),
-                Widget.Box({
-                    homogeneous: true,
-                    children: [await NormalOptionalWorkspaces()],
-                }),
-                SideModule([System()]),
+                // Removed Music and System from here
             ]
         }),
-        endWidget: Indicators(monitor),
+        endWidget: Widget.Box({
+            className: 'spacing-h-4',
+            children: [
+                Indicators(monitor),
+                WeatherWidget(),
+                Widget.Box({
+                    className: 'bar-clock-margin',
+                    children: [BarClock()],
+                }),
+            ]
+        }),
     });
     const focusedBarContent = Widget.CenterBox({
         className: 'bar-bg-focus',
@@ -67,10 +95,6 @@ export const Bar = async (monitor = 0) => {
             className: 'spacing-h-4',
             children: [
                 SideModule([]),
-                Widget.Box({
-                    homogeneous: true,
-                    children: [await FocusOptionalWorkspaces()],
-                }),
                 SideModule([]),
             ]
         }),

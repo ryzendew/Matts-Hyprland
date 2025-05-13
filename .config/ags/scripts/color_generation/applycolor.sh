@@ -151,25 +151,30 @@ apply_lightdark() {
   fi
 }
 
-apply_gtk() {
-  # Check if template exists
-  if [ ! -f "scripts/templates/gtk/gtk-colors.css" ]; then
-    echo "Template file not found for gtk colors. Skipping that."
+apply_gtk() { # Using gradience-cli
+  usegradience=$(sed -n '4p' "$STATE_DIR/user/colormode.txt")
+  if [[ "$usegradience" = "nogradience" ]]; then
+    rm "$XDG_CONFIG_HOME/gtk-3.0/gtk.css"
+    rm "$XDG_CONFIG_HOME/gtk-4.0/gtk.css"
     return
   fi
+
   # Copy template
-  mkdir -p "$CACHE_DIR"/user/generated/gtk/
-  cp "scripts/templates/gtk/gtk-colors.css" "$CACHE_DIR"/user/generated/gtk/gtk-colors.css
+  mkdir -p "$CACHE_DIR"/user/generated/gradience
+  cp "scripts/templates/gradience/preset.json" "$CACHE_DIR"/user/generated/gradience/preset.json
+
   # Apply colors
   for i in "${!colorlist[@]}"; do
-    sed -i "s/{{ ${colorlist[$i]} }}/#${colorvalues[$i]#\#}/g" "$CACHE_DIR"/user/generated/gtk/gtk-colors.css
+    sed -i "s/{{ ${colorlist[$i]} }}/${colorvalues[$i]}/g" "$CACHE_DIR"/user/generated/gradience/preset.json
   done
 
-  # Apply to both gtk3 and gtk4
-  cp "$CACHE_DIR"/user/generated/gtk/gtk-colors.css "$XDG_CONFIG_HOME"/gtk-3.0/gtk.css
-  cp "$CACHE_DIR"/user/generated/gtk/gtk-colors.css "$XDG_CONFIG_HOME"/gtk-4.0/gtk.css
+  mkdir -p "$XDG_CONFIG_HOME/presets" # create gradience presets folder
+  source $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate
+  gradience-cli apply -p "$CACHE_DIR"/user/generated/gradience/preset.json --gtk both
+  deactivate
 
-  # And set the right variant of adw gtk3
+  # And set GTK theme manually as Gradience defaults to light adw-gtk3
+  # (which is unreadable when broken when you use dark mode)
   lightdark=$(get_light_dark)
   if [ "$lightdark" = "light" ]; then
     gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3'

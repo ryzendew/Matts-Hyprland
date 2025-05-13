@@ -2,7 +2,11 @@
     @include large-rounding;
     @include elevation2;
     background-color: $layer0;
-    padding: 0.682rem;
+    padding: 0.3rem;
+    border: 3.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2),
+                0 0 20px rgba(0, 0, 0, 0.1),
+                0 0 30px rgba(0, 0, 0, 0.05);
 }
 
 .dock-app-btn-animate {
@@ -12,12 +16,12 @@
 
 .dock-app-btn {
     @include normal-rounding;
-    padding: 0.273rem;
+    padding: 0.2rem;
 }
 
 .pinned-dock-app-btn {
     @include normal-rounding;
-    padding: 0.273rem;
+    padding: 0.2rem;
     background-color: $layer0Hover;
 }
 
@@ -31,9 +35,9 @@
 }
 
 .dock-app-icon {
-    min-width: 3.409rem;
-    min-height: 3.409rem;
-    font-size: 3.409rem;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 32px;
 }
 
 .dock-separator {

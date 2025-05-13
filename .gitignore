@@ -1,10 +1,95 @@
-.config/ags/node_modules
-.config/ags/scss/_musicmaterial.scss
-.config/ags/scss/_musicwal.scss
-.config/ags/scss/_material.scss
-/diagnose.result
-/ii_ags.log
-/cache
-# Ignore Python cache files
-__pycache__/
-*.py[cod]
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!README.md
+!LICENSE
+!CONTRIBUTING.md
+!install.sh
+!uninstall.sh
+!manual-install-helper.sh
+!diagnose
+
+# And not these directories...
+!/.config/
+!/.local/
+!/Extras/
+!/arch-packages/
+!/scriptdata/
+
+# But ignore these specific files and directories
+.config/Code - OSS/
+.config/Cursor/
+.config/Epic/
+.config/GitHub Desktop/
+.config/Kitware/
+.config/MangoHud/
+.config/PacmanGUI/
+.config/Popcorn-Time/
+.config/Unreal Engine/
+.config/Valve/
+.config/ags-hyprland-config.zip
+.config/ags.zip
+.config/ardour8/
+.config/autostart/
+.config/background
+.config/cachyos/
+.config/com.ml4w.hyprlandsettings/
+.config/corectrl/
+.config/dconf/
+.config/easyeffects/
+.config/equibop/
+.config/evolution/
+.config/gedit/
+.config/gemini_history.json
+.config/go/
+.config/heroic/
+.config/homebank/
+.config/hyprmenu/
+.config/kera-desktop/
+.config/lact/
+.config/matugen
+.config/menus/
+.config/microsoft-edge-dev/
+.config/mimeapps.list
+.config/ml4w
+.config/monitors.xml
+.config/monitors.xml~
+.config/nvim
+.config/nwg-displays/
+.config/nwg-look/
+.config/obs-studio/
+.config/ohmyposh
+.config/openvr/
+.config/org.coolercontrol.CoolerControl/
+.config/org.gnome.Ptyxis/
+.config/pavucontrol.ini
+.config/peazip/
+.config/pipewire/
+.config/pulse/
+.config/qBittorrent/
+.config/qt6ct
+.config/rofi
+.config/sh.cider.genten/
+.config/spicetify/
+.config/swaync
+.config/systemd/
+.config/totem/
+.config/user-dirs.dirs
+.config/user-dirs.locale
+.config/vesktop/
+.config/vim
+.config/vkBasalt/
+.config/wal
+.config/waybar
+.config/waypaper
+.config/xsettingsd
+.config/zshrc
+
+# Ignore any temporary files
+*.swp
+*.swo
+*~
+*.bak
+*.tmp

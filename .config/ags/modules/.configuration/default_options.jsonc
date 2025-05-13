@@ -43,7 +43,7 @@
         "layerSmoke": false,
         "layerSmokeStrength": 0.2,
         "barRoundCorners": 1, // 0: No, 1: Yes
-        "fakeScreenRounding": 2 // 0: None | 1: Always | 2: When not fullscreen
+        "fakeScreenRounding": 0 // 0: None | 1: Always | 2: When not fullscreen
     },
     "apps": {
         "bluetooth": "blueberry",
@@ -193,30 +193,25 @@
         "shown": 10
     },
     "dock": {
-        "enabled": false,
-        "hiddenThickness": 5,
+        "enabled": true,
+        "hiddenThickness": 40,
         "pinnedApps": [
-            "firefox",
-            "org.gnome.Nautilus"
+            "microsoft-edge-dev",
+            "org.gnome.Nautilus",
+            "vesktop",
+            "cider",
+            "obs",
+            "resolve",
+            "steam-native",
+            "lutris",
+            "heroic",
+            "ptyxis",
         ],
-        "layer": "top",
-        "monitorExclusivity": true, // Dock will move to other monitor along with focus if enabled
-        "searchPinnedAppIcons": false, // Try to search for the correct icon if the app class isn't an icon name
-        "trigger": [
-            "client-added",
-            "client-removed"
-        ], // client_added, client_move, workspace_active, client_active
-        // Automatically hide dock after `interval` ms since trigger
-        "autoHide": [
-            {
-                "trigger": "client-added",
-                "interval": 500
-            },
-            {
-                "trigger": "client-removed",
-                "interval": 500
-            }
-        ]
+        "layer": "dock",
+        "monitorExclusivity": true,
+        "searchPinnedAppIcons": false,
+        "autoHide": [], // Empty array means dock will always be visible
+        "workspaceIsolation": false
     },
     // Longer stuff
     "icons": {
@@ -232,16 +227,6 @@
             "light": "Adwaita"
         },
         "substitutions": {
-            "code-url-handler": "visual-studio-code",
-            "Code": "visual-studio-code",
-            "GitHub Desktop": "github-desktop",
-            "Minecraft* 1.20.1": "minecraft",
-            "gnome-tweaks": "org.gnome.tweaks",
-            "pavucontrol-qt": "pavucontrol",
-            "wps": "wps-office2019-kprometheus",
-            "wpsoffice": "wps-office2019-kprometheus",
-            "footclient": "foot",
-            "zen": "zen-browser",
             "": "image-missing"
         },
         "regexSubstitutions": [

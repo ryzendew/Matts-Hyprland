@@ -105,8 +105,6 @@ class GPTMessage extends Service {
 
     _role = '';
     _content = '';
-    _hasReasoningContent = false;
-    _parsedReasoningContent = false;
     _lastContentLength = 0;
     _thinking;
     _done = false;
@@ -114,8 +112,6 @@ class GPTMessage extends Service {
     constructor(role, content, thinking = true, done = false) {
         super();
         this._role = role;
-        this._hasReasoningContent = false;
-        this._parsedReasoningContent = false;
         this._content = content;
         this._thinking = thinking;
         this._done = done;
@@ -126,18 +122,6 @@ class GPTMessage extends Service {
 
     get role() { return this._role }
     set role(role) { this._role = role; this.emit('changed') }
-
-    get hasReasoningContent() { return this._hasReasoningContent }
-    set hasReasoningContent(value) {
-        this._hasReasoningContent = value;
-        this.emit('changed')
-    }
-
-    get parsedReasoningContent() { return this._parsedReasoningContent }
-    set parsedReasoningContent(value) {
-        this._parsedReasoningContent = value;
-        this.emit('changed')
-    }
 
     get content() { return this._content }
     set content(content) {
@@ -267,24 +251,8 @@ class GPTService extends Service {
                             aiResponse.done = true;
                             return;
                         }
-                        
-                        // aiResponse.addDelta(result.choices[0].delta.content);
-                        if (!result.choices[0].delta.content && result.choices[0].delta.reasoning_content) {
-                            if (!aiResponse.hasReasoningContent) {
-                                aiResponse.hasReasoningContent = true;
-                                aiResponse.addDelta(`<think>\n${result.choices[0].delta.reasoning_content}`);
-                            }
-                            else {
-                                aiResponse.addDelta(`${result.choices[0].delta.reasoning_content}`);
-                            }
-                        }
-                        else {
-                            if (aiResponse.hasReasoningContent) {
-                                aiResponse.parsedReasoningContent = true;
-                                aiResponse.addDelta(`\n</think>\n`);
-                            }
-                            aiResponse.addDelta(result.choices[0].delta.content);
-                        }
+                        aiResponse.addDelta(result.choices[0].delta.content);
+                        // print(result.choices[0])
                     }
                     catch {
                         aiResponse.addDelta(line + '\n');

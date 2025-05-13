@@ -77,8 +77,12 @@ const BarResource = (name, icon, command, circprogClassName = `bar-batt-circprog
             setup: (self) => self.poll(5000, () => execAsync(['bash', '-c', command])
                 .then((output) => {
                     resourceCircProg.css = `font-size: ${Number(output)}px;`;
-                    resourceLabel.label = `${Math.round(Number(output))}%`;
-                    widget.tooltipText = `${name}: ${Math.round(Number(output))}%`;
+                    if (name.includes('Temp')) {
+                        resourceLabel.label = `${Math.round(Number(output))}°C`;
+                    } else {
+                        resourceLabel.label = `${Math.round(Number(output))}%`;
+                    }
+                    widget.tooltipText = `${name}: ${Math.round(Number(output))}${name.includes('Temp') ? '°C' : '%'}`;
                 }).catch(print))
             ,
         })
@@ -148,8 +152,6 @@ export default () => {
     const trackTitle = Label({
         hexpand: true,
         className: 'txt-smallie bar-music-txt',
-        truncate: 'end',
-        maxWidthChars: 1, // Doesn't matter, just needs to be non negative
         setup: (self) => self.hook(Mpris, label => {
             const mpris = Mpris.getPlayer('');
             if (mpris)
@@ -166,64 +168,12 @@ export default () => {
             trackTitle,
         ]
     })
-    const SystemResourcesOrCustomModule = () => {
-        // Check if $XDG_CACHE_HOME/ags/user/scripts/custom-module-poll.sh exists
-        if (GLib.file_test(CUSTOM_MODULE_CONTENT_SCRIPT, GLib.FileTest.EXISTS)) {
-            const interval = Number(Utils.readFile(CUSTOM_MODULE_CONTENT_INTERVAL_FILE)) || 5000;
-            return BarGroup({
-                child: Button({
-                    child: Label({
-                        className: 'txt-smallie txt-onSurfaceVariant',
-                        useMarkup: true,
-                        setup: (self) => Utils.timeout(1, () => {
-                            self.label = exec(CUSTOM_MODULE_CONTENT_SCRIPT);
-                            self.poll(interval, (self) => {
-                                const content = exec(CUSTOM_MODULE_CONTENT_SCRIPT);
-                                self.label = content;
-                            })
-                        })
-                    }),
-                    onPrimaryClickRelease: () => execAsync(CUSTOM_MODULE_LEFTCLICK_SCRIPT).catch(print),
-                    onSecondaryClickRelease: () => execAsync(CUSTOM_MODULE_RIGHTCLICK_SCRIPT).catch(print),
-                    onMiddleClickRelease: () => execAsync(CUSTOM_MODULE_MIDDLECLICK_SCRIPT).catch(print),
-                    onScrollUp: () => execAsync(CUSTOM_MODULE_SCROLLUP_SCRIPT).catch(print),
-                    onScrollDown: () => execAsync(CUSTOM_MODULE_SCROLLDOWN_SCRIPT).catch(print),
-                })
-            });
-        } else return BarGroup({
-            child: Box({
-                children: [
-                    BarResource(getString('RAM Usage'), 'memory', `LANG=C free | awk '/^Mem/ {printf("%.2f\\n", ($3/$2) * 100)}'`,
-                        `bar-ram-circprog ${userOptions.appearance.borderless ? 'bar-ram-circprog-borderless' : ''}`, 'bar-ram-txt', 'bar-ram-icon'),
-                    Revealer({
-                        revealChild: true,
-                        transition: 'slide_left',
-                        transitionDuration: userOptions.animations.durationLarge,
-                        child: Box({
-                            className: 'spacing-h-10 margin-left-10',
-                            children: [
-                                BarResource(getString('Swap Usage'), 'swap_horiz', `LANG=C free | awk '/^Swap/ {if ($2 > 0) printf("%.2f\\n", ($3/$2) * 100); else print "0";}'`,
-                                    `bar-swap-circprog ${userOptions.appearance.borderless ? 'bar-swap-circprog-borderless' : ''}`, 'bar-swap-txt', 'bar-swap-icon'),
-                                BarResource(getString('CPU Usage'), 'settings_motion_mode', `LANG=C top -bn1 | grep Cpu | sed 's/\\,/\\./g' | awk '{print $2}'`,
-                                    `bar-cpu-circprog ${userOptions.appearance.borderless ? 'bar-cpu-circprog-borderless' : ''}`, 'bar-cpu-txt', 'bar-cpu-icon'),
-                            ]
-                        }),
-                        setup: (self) => self.hook(Mpris, label => {
-                            const mpris = Mpris.getPlayer('');
-                            self.revealChild = (!mpris || mpris.playBackStatus !== 'Playing' || userOptions.bar.alwaysShowFullResources);
-                        }),
-                    })
-                ],
-            })
-        });
-    }
     return EventBox({
         onScrollUp: () => adjustVolume('up'),
         onScrollDown: () => adjustVolume('down'),
         child: Box({
             className: 'spacing-h-4',
             children: [
-                SystemResourcesOrCustomModule(),
                 EventBox({
                     child: BarGroup({ child: musicStuff }),
                     onPrimaryClick: () => showMusicControls.setValue(!showMusicControls.value),

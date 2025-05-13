@@ -6,7 +6,7 @@ export default (monitor = 0) => Widget.Window({
     name: `dock${monitor}`,
     layer: userOptions.dock.layer,
     anchor: ['bottom'],
-    exclusivity: 'normal',
+    exclusivity: 'exclusive',
     visible: true,
     child: Dock(monitor),
 });

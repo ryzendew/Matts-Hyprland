@@ -15,5 +15,22 @@
 // "workspaces": {"shown": 8 }
 //
 {
-    
+    "sidebar": {
+        "pages": {
+            "apis": {
+                "defaultPage": "booru"
+            },
+            "defaultPage": "tools"
+        }
+    },
+    "appearance": {
+        "barRoundCorners": false
+    },
+    "weather": {
+        "city": "Halifax, Nova Scotia",
+        "preferredUnit": "C"
+    },
+    "time": {
+        "format": "%I:%M %p"
+    }
 }
