@@ -398,8 +398,22 @@ else
   git -C "$base/Extras/HyprMenu" pull
 fi
 cd "$base/Extras/HyprMenu"
-sudo ./build.sh --install
+# Build and install HyprMenu
+echo -e "\e[36m[$0]: Building HyprMenu...\e[0m"
+meson setup build
+ninja -C build
+sudo ninja -C build install
 cd "$base"
+
+# Copy arch-logo.png to Pictures directory
+echo -e "\e[36m[$0]: Copying arch-logo.png to Pictures directory...\e[0m"
+mkdir -p "$HOME/Pictures"
+if [ -f "$base/arch-logo.png" ]; then
+  v cp "$base/arch-logo.png" "$HOME/Pictures/logo.png"
+  echo -e "\e[32m[$0]: Successfully copied arch-logo.png to $HOME/Pictures/logo.png\e[0m"
+else
+  echo -e "\e[33m[$0]: Warning: arch-logo.png not found in $base\e[0m"
+fi
 
 #####################################################################################
 printf "\e[36m[$0]: 2. Copying + Configuring\e[0m\n"
@@ -470,6 +484,34 @@ case $SKIP_HYPRLAND in
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
       v cp .config/hypr/hyprland.conf $t
+      existed_hypr_conf=n
+    fi
+    t="$XDG_CONFIG_HOME/hypr/hypridle.conf"
+    if [ -f $t ];then
+      echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
+      v cp -f .config/hypr/hypridle.conf $t.new
+      existed_hypridle_conf=y
+    else
+      echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
+      v cp .config/hypr/hypridle.conf $t
+      existed_hypridle_conf=n
+    fi
+    t="$XDG_CONFIG_HOME/hypr/hyprlock.conf"
+    if [ -f $t ];then
+      echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
+      v cp -f .config/hypr/hyprlock.conf $t.new
+      existed_hyprlock_conf=y
+    else
+      echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
+      v cp .config/hypr/hyprlock.conf $t
+      existed_hyprlock_conf=n
+    fi
+    t="$XDG_CONFIG_HOME/hypr/custom"
+    if [ -d $t ];then
+      echo -e "\e[34m[$0]: \"$t\" already exists, will not do anything.\e[0m"
+    else
+      echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
+      v rsync -av --delete .config/hypr/custom/ $t/
     fi
     ;;
 esac
