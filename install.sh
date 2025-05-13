@@ -91,15 +91,54 @@ if ! command -v yay >/dev/null 2>&1;then
   v install-yay
 fi
 
-# Install extra packages from dependencies.conf as declared by the user
-if (( ${#pkglist[@]} != 0 )); then
-	if $ask; then
-		# execute per element of the array $pkglist
-		for i in "${pkglist[@]}";do v yay -S --needed $i;done
-	else
-		# execute for all elements of the array $pkglist in one line
-		v yay -S --needed --noconfirm ${pkglist[*]}
-	fi
+# --- Batch package installation setup ---
+yay_pkgs=()
+pacman_pkgs=()
+pacmanU_pkgs=()
+
+# Add repo dependencies (HyprMenu build deps, etc.)
+pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration)
+
+# Add extra packages from dependencies.conf as declared by the user
+yay_pkgs+=("${pkglist[@]}")
+
+# Add meta-packages (local PKGBUILDs)
+metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
+metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
+metapkgs+=(./arch-packages/illogical-impulse-hyprland)
+metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
+metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
+[[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
+  metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
+
+for i in "${metapkgs[@]}"; do
+  if [ -f "$i/PKGBUILD" ]; then
+    source "$i/PKGBUILD"
+    yay_pkgs+=("${depends[@]}")
+    # Build the package and collect the resulting .pkg.tar.zst for pacman -U
+    pushd "$i"
+    makepkg -sf --noconfirm
+    for pkgfile in ./*.pkg.tar.zst; do
+      pacmanU_pkgs+=("$i/$pkgfile")
+    done
+    popd
+  fi
+done
+
+# --- Batch install all collected packages ---
+if (( ${#pacman_pkgs[@]} )); then
+  echo -e "\e[36m[$0]: Installing all repo packages via pacman...\e[0m"
+  sudo pacman -S --needed --noconfirm "${pacman_pkgs[@]}"
+fi
+
+if (( ${#yay_pkgs[@]} )); then
+  echo -e "\e[36m[$0]: Installing all AUR/extra packages via yay...\e[0m"
+  yay -S --needed --noconfirm "${yay_pkgs[@]}"
+fi
+
+if (( ${#pacmanU_pkgs[@]} )); then
+  echo -e "\e[36m[$0]: Installing all local PKGBUILD packages via pacman -U...\e[0m"
+  sudo pacman -U --noconfirm "${pacmanU_pkgs[@]}"
 fi
 
 showfun handle-deprecated-dependencies
