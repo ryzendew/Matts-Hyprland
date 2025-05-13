@@ -238,7 +238,7 @@ for cmd in rsync curl git make gcc; do
 done
 
 # Check for Python 3.12+ or 3.13.3
-python3 --version 2>/dev/null | grep -q '3.12\|3.13.3' || { echo "[FATAL] Python 3.12+ or 3.13.3 is required. Please install it before proceeding."; exit 1; }
+python --version 2>/dev/null | grep -q '3.12\|3.13.3' || { echo "[FATAL] Python 3.12+ or 3.13.3 is required. Please install it before proceeding."; exit 1; }
 
 #####################################################################################
 if ! command -v pacman >/dev/null 2>&1; then 
