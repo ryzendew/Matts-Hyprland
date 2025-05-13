@@ -21,6 +21,7 @@ SKIP_HYPRLAND=false
 SKIP_FISH=false
 SKIP_MISCCONF=false
 SKIP_PLASMAINTG=false
+SKIP_AGS=false
 DEPLISTFILE=./scriptdata/dependencies.conf
 
 # Helper functions
@@ -160,6 +161,7 @@ If no option is specified, run default install process.
       --skip-plasmaintg     Skip installing plasma-browser-integration
       --skip-miscconf       Skip copying the dirs and files to \".configs\" except for
                             AGS, Fish and Hyprland
+      --skip-ags            Skip installing and configuring AGS
       --deplistfile <path>  Specify a dependency list file. By default
                             \"./scriptdata/dependencies.conf\"
       --fontset <set>       (Unavailable yet) Use a set of pre-defined font and config
@@ -173,7 +175,7 @@ function cleancache() {
 # Parse command line arguments
 para=$(getopt \
        -o hfk:cs \
-       -l help,force,fontset:,deplistfile:,clean,skip-sysupdate,skip-fish,skip-hyprland,skip-plasmaintg,skip-miscconf \
+       -l help,force,fontset:,deplistfile:,clean,skip-sysupdate,skip-fish,skip-hyprland,skip-plasmaintg,skip-miscconf,skip-ags \
        -n "$0" -- "$@")
 [ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
 
@@ -199,6 +201,7 @@ while true ; do
     --skip-fish) SKIP_FISH=true;shift;;
     --skip-miscconf) SKIP_MISCCONF=true;shift;;
     --skip-plasmaintg) SKIP_PLASMAINTG=true;shift;;
+    --skip-ags) SKIP_AGS=true;shift;;
     --deplistfile)
       if [ -f "$2" ];then
         DEPLISTFILE="$2"
