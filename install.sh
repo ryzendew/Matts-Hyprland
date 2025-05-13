@@ -575,6 +575,10 @@ v sudo systemctl enable bluetooth --now
 v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
+# Ensure HyprMenu build dependencies are installed
+echo -e "\e[36m[$0]: Installing dependencies for HyprMenu (gtk4, gtk4-layer-shell, meson, ninja, pkgconf, gcc, glib2, git, base-devel)\e[0m"
+sudo pacman -S --needed git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2
+
 # Install HyprMenu (modern launcher for Hyprland)
 echo -e "\e[36m[$0]: Installing HyprMenu (modern launcher for Hyprland)\e[0m"
 if [ ! -d "$base/Extras/HyprMenu" ]; then
@@ -584,15 +588,13 @@ else
   git -C "$base/Extras/HyprMenu" pull
 fi
 cd "$base/Extras/HyprMenu"
-# Build and install HyprMenu
-echo -e "\e[36m[$0]: Building HyprMenu...\e[0m"
 meson setup build
 ninja -C build
 sudo ninja -C build install
 cd "$base"
 
-# Copy arch-logo.png to Pictures directory
-echo -e "\e[36m[$0]: Copying Arch-linux-logo.png to Pictures directory...\e[0m"
+# Copy Arch-linux-logo.png to Pictures/logo directory
+echo -e "\e[36m[$0]: Copying Arch-linux-logo.png to Pictures/logo directory...\e[0m"
 mkdir -p "$HOME/Pictures/logo"
 if [ -f "$base/Extras/Arch-linux-logo.png" ]; then
   v cp "$base/Extras/Arch-linux-logo.png" "$HOME/Pictures/logo/Arch-linux-logo.png"
