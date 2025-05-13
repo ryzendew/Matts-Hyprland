@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
 export base="$(pwd)"
+source ./scriptdata/environment-variables
+source ./scriptdata/functions
+source ./scriptdata/installers
+source ./scriptdata/options
 
 # Environment variables
 XDG_BIN_HOME=${XDG_BIN_HOME:-$HOME/.local/bin}
@@ -217,6 +221,11 @@ done
 # Bulletproof preamble and error-checking block
 set -euo pipefail
 
+# Check for required helper scripts
+for f in scriptdata/environment-variables scriptdata/functions scriptdata/installers scriptdata/options; do
+    [ -f "$f" ] || { echo "[FATAL] Missing required file: $f"; exit 1; }
+done
+
 # Check for network connectivity
 ping -c 1 archlinux.org >/dev/null 2>&1 || { echo "[FATAL] No network connection. Please connect to the internet."; exit 1; }
 
@@ -225,20 +234,20 @@ sudo -v || { echo "[FATAL] You need sudo privileges to run this script."; exit 1
 
 # Check for required system tools
 for cmd in rsync curl git make gcc; do
-  command -v $cmd >/dev/null 2>&1 || { echo "[FATAL] $cmd is required but not installed."; exit 1; }
+    command -v $cmd >/dev/null 2>&1 || { echo "[FATAL] $cmd is required but not installed."; exit 1; }
 done
 
 # Check for Python 3.12+
 python3 --version 2>/dev/null | grep -q '3.12' || { echo "[FATAL] Python 3.12+ is required. Please install it before proceeding."; exit 1; }
 
+#####################################################################################
 if ! command -v pacman >/dev/null 2>&1; then 
   printf "\e[31m[$0]: pacman not found, it seems that the system is not ArchLinux or Arch-based distros. Aborting...\e[0m\n"
   exit 1
 fi
-
 prevent_sudo_or_root
 
-startask() {
+startask () {
   printf "\e[34m[$0]: Hi there! Before we start:\n"
   printf 'This script 1. only works for ArchLinux and Arch-based distros.\n'
   printf '            2. does not handle system-level/hardware stuff like Nvidia drivers\n'
@@ -255,6 +264,7 @@ startask() {
       ;;
   esac
   
+
   printf '\n'
   printf 'Do you want to confirm every time before a command executes?\n'
   printf '  y = Yes, ask me before executing each of them. (DEFAULT)\n'
@@ -269,12 +279,12 @@ startask() {
 }
 
 case $ask in
-  false) sleep 0 ;;
-  *) startask ;;
+  false)sleep 0 ;;
+  *)startask ;;
 esac
 
 set -e
-
+#####################################################################################
 printf "\e[36m[$0]: 1. Get packages and setup user groups/services\n\e[0m"
 
 # Issue #363
@@ -296,13 +306,13 @@ fi
 
 # Install extra packages from dependencies.conf as declared by the user
 if (( ${#pkglist[@]} != 0 )); then
-  if $ask; then
-    # execute per element of the array $pkglist
-    for i in "${pkglist[@]}";do v yay -S --needed $i;done
-  else
-    # execute for all elements of the array $pkglist in one line
-    v yay -S --needed --noconfirm ${pkglist[*]}
-  fi
+	if $ask; then
+		# execute per element of the array $pkglist
+		for i in "${pkglist[@]}";do v yay -S --needed $i;done
+	else
+		# execute for all elements of the array $pkglist in one line
+		v yay -S --needed --noconfirm ${pkglist[*]}
+	fi
 fi
 
 showfun handle-deprecated-dependencies
@@ -311,16 +321,16 @@ v handle-deprecated-dependencies
 # https://github.com/end-4/dots-hyprland/issues/581
 # yay -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
 install-local-pkgbuild() {
-  local location=$1
-  local installflags=$2
+	local location=$1
+	local installflags=$2
 
-  x pushd $location
+	x pushd $location
 
-  source ./PKGBUILD
-  x yay -S $installflags --asdeps "${depends[@]}"
-  x makepkg -Asi --noconfirm
+	source ./PKGBUILD
+	x yay -S $installflags --asdeps "${depends[@]}"
+	x makepkg -Asi --noconfirm
 
-  x popd
+	x popd
 }
 
 # Install core dependencies from the meta-packages
@@ -333,9 +343,9 @@ metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
   metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
 
 for i in "${metapkgs[@]}"; do
-  metainstallflags="--needed"
-  $ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
-  v install-local-pkgbuild "$i" "$metainstallflags"
+	metainstallflags="--needed"
+	$ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
+	v install-local-pkgbuild "$i" "$metainstallflags"
 done
 
 # Ensure uv (Python package manager) is installed
@@ -391,6 +401,7 @@ cd "$base/Extras/HyprMenu"
 sudo ./build.sh --install
 cd "$base"
 
+#####################################################################################
 printf "\e[36m[$0]: 2. Copying + Configuring\e[0m\n"
 
 # In case some folders does not exists
@@ -405,6 +416,7 @@ case $SKIP_MISCCONF in
   true) sleep 0;;
   *)
     for i in $(find .config/ -mindepth 1 -maxdepth 1 ! -name 'ags' ! -name 'fish' ! -name 'hypr' -exec basename {} \;); do
+#      i=".config/$i"
       echo "[$0]: Found target: .config/$i"
       if [ -d ".config/$i" ];then v rsync -av --delete ".config/$i/" "$XDG_CONFIG_HOME/$i/"
       elif [ -f ".config/$i" ];then v rsync -av ".config/$i" "$XDG_CONFIG_HOME/$i"
@@ -428,6 +440,7 @@ case $SKIP_AGS in
     t="$XDG_CONFIG_HOME/ags/user_options.jsonc"
     if [ -f $t ];then
       echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
+      # v cp -f .config/ags/user_options.jsonc $t.new
       existed_ags_opt=y
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
@@ -447,10 +460,12 @@ case $SKIP_HYPRLAND in
       echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
       if [ -f "$XDG_STATE_HOME/ags/user/firstrun.txt" ]
       then
-        echo -e "\e[33m[$0]: First run detected. Will copy the default config.\e[0m"
-        v cp .config/hypr/hyprland.conf $t
+        v cp -f .config/hypr/hyprland.conf $t.new
+        existed_hypr_conf=y
       else
-        echo -e "\e[33m[$0]: Will NOT copy the default config.\e[0m"
+        v mv $t $t.old
+        v cp -f .config/hypr/hyprland.conf $t
+        existed_hypr_conf_firstrun=y
       fi
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
@@ -459,14 +474,74 @@ case $SKIP_HYPRLAND in
     ;;
 esac
 
-printf "\e[36m[$0]: 3. Finalizing\e[0m\n"
 
-# Make sure that the user has the right permissions
-v chmod -R u+rw $XDG_CONFIG_HOME
-v chmod -R u+rw $XDG_DATA_HOME
+# some foldes (eg. .local/bin) should be processed separately to avoid `--delete' for rsync,
+# since the files here come from different places, not only about one program.
+v rsync -av ".local/bin/" "$XDG_BIN_HOME"
 
-# Make sure that the user has the right permissions for HyprMenu
-v chmod -R u+rw "$base/Extras/HyprMenu"
+# Prevent hyprland from not fully loaded
+sleep 1
+try hyprctl reload
 
-printf "\e[36m[$0]: Done!\e[0m\n"
-printf "\e[36m[$0]: Please log out and log back in to apply all changes.\e[0m\n"
+existed_zsh_conf=n
+grep -q 'source ${XDG_CONFIG_HOME:-~/.config}/zshrc.d/dots-hyprland.zsh' ~/.zshrc && existed_zsh_conf=y
+
+warn_files=()
+warn_files_tests=()
+warn_files_tests+=(/usr/local/bin/ags)
+warn_files_tests+=(/usr/local/etc/pam.d/ags)
+warn_files_tests+=(/usr/local/lib/{GUtils-1.0.typelib,Gvc-1.0.typelib,libgutils.so,libgvc.so})
+warn_files_tests+=(/usr/local/share/com.github.Aylur.ags)
+warn_files_tests+=(/usr/local/share/fonts/TTF/Rubik{,-Italic}'[wght]'.ttf)
+warn_files_tests+=(/usr/local/share/licenses/ttf-rubik)
+warn_files_tests+=(/usr/local/share/fonts/TTF/Gabarito-{Black,Bold,ExtraBold,Medium,Regular,SemiBold}.ttf)
+warn_files_tests+=(/usr/local/share/licenses/ttf-gabarito)
+warn_files_tests+=(/usr/local/share/icons/OneUI{,-dark,-light})
+warn_files_tests+=(/usr/local/share/icons/Bibata-Modern-Classic)
+warn_files_tests+=(/usr/local/bin/{LaTeX,res})
+for i in ${warn_files_tests[@]}; do
+  echo $i
+  test -f $i && warn_files+=($i)
+  test -d $i && warn_files+=($i)
+done
+
+#####################################################################################
+printf "\e[36m[$0]: Finished. See the \"Import Manually\" folder and grab anything you need.\e[0m\n"
+printf "\n"
+printf "\e[36mIt is recommended to check out\n"
+printf "https://end-4.github.io/dots-hyprland-wiki/en/i-i/01setup/#post-installation \n"
+printf "for hints on launching Hyprland.\e[0m\n"
+printf "\n"
+printf "\e[36mIf you are already running Hyprland,\e[0m\n"
+printf "\e[36mPress \e[30m\e[46m Ctrl+Super+T \e[0m\e[36m to select a wallpaper\e[0m\n"
+printf "\e[36mPress \e[30m\e[46m Super+/ \e[0m\e[36m for a list of keybinds\e[0m\n"
+printf "\n"
+
+case $existed_ags_opt in
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/ags/user_options.jsonc\" already existed before and we didn't overwrite it. \e[0m\n"
+#    printf "\e[33mPlease use \"$XDG_CONFIG_HOME/ags/user_options.jsonc.new\" as a reference for a proper format.\e[0m\n"
+;;esac
+case $existed_hypr_conf_firstrun in
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" already existed before. As it seems it is your first run, we replaced it with a new one. \e[0m\n"
+     printf "\e[33mAs it seems it is your first run, we replaced it with a new one. The old one has been renamed to \"$XDG_CONFIG_HOME/hypr/hyprland.conf.old\".\e[0m\n"
+;;esac
+case $existed_hypr_conf in
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" already existed before and we didn't overwrite it. \e[0m\n"
+     printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hyprland.conf.new\" as a reference for a proper format.\e[0m\n"
+;;esac
+case $existed_hypridle_conf in
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hypridle.conf\" already existed before and we didn't overwrite it. \e[0m\n"
+     printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hypridle.conf.new\" as a reference for a proper format.\e[0m\n"
+;;esac
+case $existed_hyprlock_conf in
+  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprlock.conf\" already existed before and we didn't overwrite it. \e[0m\n"
+     printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hyprlock.conf.new\" as a reference for a proper format.\e[0m\n"
+;;esac
+
+if [[ -z "${ILLOGICAL_IMPULSE_VIRTUAL_ENV}" ]]; then
+  printf "\n\e[31m[$0]: \!! Important \!! : Please ensure environment variable \e[0m \$ILLOGICAL_IMPULSE_VIRTUAL_ENV \e[31m is set to proper value (by default \"~/.local/state/ags/.venv\"), or AGS config will not work. We have already provided this configuration in ~/.config/hypr/hyprland/env.conf, but you need to ensure it is included in hyprland.conf, and also a restart is needed for applying it.\e[0m\n"
+fi
+
+if [[ ! -z "${warn_files[@]}" ]]; then
+  printf "\n\e[31m[$0]: \!! Important \!! : Please delete \e[0m ${warn_files[*]} \e[31m manually as soon as possible, since we\'re now using AUR package or local PKGBUILD to install them for Arch(based) Linux distros, and they'll take precedence over our installation, or at least take up more space.\e[0m\n"
+fi
