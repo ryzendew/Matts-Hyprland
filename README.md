@@ -109,3 +109,25 @@ This setup uses [HyprMenu](https://github.com/ryzendew/HyprMenu) as the main app
 
  - Inspiration: osu!lazer, Windows 11, Material Design 3, AvdanOS (concept)
  - Copying: The license allows you to. Personally I have absolutely no problem with others redistributing/recreating my work. There's no "stealing" (unless you do weird stuff and violate the license). (this note is here because some people actually asked)
+
+## HyprMenu Dependencies
+
+To build and install HyprMenu, the following dependencies are required (all available in the official Arch Linux repositories):
+
+- git
+- base-devel
+- meson
+- ninja
+- pkgconf
+- gcc
+- gtk4
+- gtk4-layer-shell
+- glib2
+
+You can install them with:
+
+```bash
+sudo pacman -S --needed git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2
+```
+
+The install script will automatically install these for you if they are not already present.

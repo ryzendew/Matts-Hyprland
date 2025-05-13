@@ -145,6 +145,10 @@ v sudo systemctl enable bluetooth --now
 v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
+# Ensure HyprMenu build dependencies are installed
+echo -e "\e[36m[$0]: Installing dependencies for HyprMenu (gtk4, gtk4-layer-shell, meson, ninja, pkgconf, gcc, glib2, git, base-devel)\e[0m"
+sudo pacman -S --needed git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2
+
 # Install HyprMenu (modern launcher for Hyprland)
 echo -e "\e[36m[$0]: Installing HyprMenu (modern launcher for Hyprland)\e[0m"
 if [ ! -d "$base/Extras/HyprMenu" ]; then
