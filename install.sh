@@ -1,4 +1,25 @@
 #!/usr/bin/env bash
+# --- One-liner bootstrap: download repo if needed ---
+NEEDED_FILES=(scriptdata/environment-variables scriptdata/functions scriptdata/installers scriptdata/options)
+NEED_CLONE=0
+for f in "${NEEDED_FILES[@]}"; do
+  [ -f "$f" ] || NEED_CLONE=1
+done
+
+if [ "$NEED_CLONE" = "1" ]; then
+  TMPDIR="$HOME/.hyprTmp"
+  REPO_URL="https://github.com/ryzendew/Matts-Hyprland"
+  BRANCH="main"
+  SCRIPT="install.sh"
+
+  echo "[INFO] Downloading full repo to $TMPDIR for installation..."
+  rm -rf "$TMPDIR"
+  git clone --depth=1 --branch "$BRANCH" "$REPO_URL" "$TMPDIR"
+  cd "$TMPDIR"
+  exec bash "$SCRIPT" "$@"
+  exit
+fi
+
 cd "$(dirname "$0")"
 export base="$(pwd)"
 source ./scriptdata/environment-variables
