@@ -1,0 +1,68 @@
+.menu-box {
+    background-color: rgba(30, 30, 30, 0.95);
+    border-radius: 12px;
+    padding: 12px;
+    min-width: 600px;
+    min-height: 400px;
+}
+
+.search-box {
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.grid-view {
+    margin: 12px 0;
+}
+
+.app-item {
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    &.grid {
+        margin: 4px;
+        
+        .grid-label {
+            margin-top: 8px;
+            font-size: 12px;
+        }
+    }
+    
+    &.list {
+        margin: 2px 0;
+        
+        .list-label {
+            margin-left: 8px;
+            font-size: 14px;
+        }
+    }
+}
+
+.description-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-left: 8px;
+}
+
+.system-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    
+    button {
+        padding: 8px;
+        border-radius: 8px;
+        transition: background-color 0.2s;
+        
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    }
+} 
