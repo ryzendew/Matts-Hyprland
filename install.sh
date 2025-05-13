@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
 export base="$(pwd)"
-mkdir -p "$base/cache"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/Matts-Hyprland"
+mkdir -p "$CACHE_DIR"
 
 # ===================== Inlined: environment-variables =====================
 # XDG Base Directory variables
@@ -111,10 +112,10 @@ install-python-packages (){
 handle-deprecated-dependencies (){
   printf "\e[36m[$0]: Removing deprecated dependencies:\e[0m\n"
   for i in illogical-impulse-{microtex,pymyc-aur,ags,agsv1} {hyprutils,hyprpicker,hyprlang,hypridle,hyprland-qt-support,hyprland-qtutils,hyprlock,xdg-desktop-portal-hyprland,hyprcursor,hyprwayland-scanner,hyprland}-git;do try sudo pacman --noconfirm -Rdd $i;done
-  remove_bashcomments_emptylines ./scriptdata/previous_dependencies.conf ./cache/old_deps_stripped.conf
-  readarray -t old_deps_list < ./cache/old_deps_stripped.conf
-  pacman -Qeq > ./cache/pacman_explicit_packages
-  readarray -t explicitly_installed < ./cache/pacman_explicit_packages
+  remove_bashcomments_emptylines ./scriptdata/previous_dependencies.conf "$CACHE_DIR/old_deps_stripped.conf"
+  readarray -t old_deps_list < "$CACHE_DIR/old_deps_stripped.conf"
+  pacman -Qeq > "$CACHE_DIR/pacman_explicit_packages"
+  readarray -t explicitly_installed < "$CACHE_DIR/pacman_explicit_packages"
   echo "Attempting to set previously explicitly installed deps as implicit..."
   for i in "${explicitly_installed[@]}"; do for j in "${old_deps_list[@]}"; do
     [ "$i" = "$j" ] && yay -D --asdeps "$i"
@@ -292,10 +293,10 @@ function handle-deprecated-dependencies() {
   printf "\e[36m[$0]: Removing deprecated dependencies:\e[0m\n"
   for i in illogical-impulse-{microtex,pymyc-aur,ags,agsv1} {hyprutils,hyprpicker,hyprlang,hypridle,hyprland-qt-support,hyprland-qtutils,hyprlock,xdg-desktop-portal-hyprland,hyprcursor,hyprwayland-scanner,hyprland}-git;do try sudo pacman --noconfirm -Rdd $i;done
   # Convert old dependencies to non explicit dependencies so that they can be orphaned if not in meta packages
-  remove_bashcomments_emptylines ./scriptdata/previous_dependencies.conf ./cache/old_deps_stripped.conf
-  readarray -t old_deps_list < ./cache/old_deps_stripped.conf
-  pacman -Qeq > ./cache/pacman_explicit_packages
-  readarray -t explicitly_installed < ./cache/pacman_explicit_packages
+  remove_bashcomments_emptylines ./scriptdata/previous_dependencies.conf "$CACHE_DIR/old_deps_stripped.conf"
+  readarray -t old_deps_list < "$CACHE_DIR/old_deps_stripped.conf"
+  pacman -Qeq > "$CACHE_DIR/pacman_explicit_packages"
+  readarray -t explicitly_installed < "$CACHE_DIR/pacman_explicit_packages"
 
   echo "Attempting to set previously explicitly installed deps as implicit..."
   for i in "${explicitly_installed[@]}"; do for j in "${old_deps_list[@]}"; do
@@ -470,8 +471,8 @@ if (( ${#pacman_packages[@]} != 0 )); then
   v sudo pacman -S --needed --noconfirm "${pacman_packages[@]}"
 fi
 
-remove_bashcomments_emptylines ${DEPLISTFILE} ./cache/dependencies_stripped.conf
-readarray -t pkglist < ./cache/dependencies_stripped.conf
+remove_bashcomments_emptylines ${DEPLISTFILE} "$CACHE_DIR/dependencies_stripped.conf"
+readarray -t pkglist < "$CACHE_DIR/dependencies_stripped.conf"
 
 # Collect dependencies from meta-packages
 metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
