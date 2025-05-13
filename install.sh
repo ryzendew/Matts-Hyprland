@@ -307,17 +307,37 @@ if ! command -v yay >/dev/null 2>&1;then
   v install-yay
 fi
 
-# Ensure HyprMenu build dependencies are installed
-echo -e "\e[36m[$0]: Installing dependencies for HyprMenu and other required packages...\e[0m"
-v sudo pacman -S --needed git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration
+# Collect all packages that need to be installed via yay
+yay_packages=()
 
-# Install extra packages from dependencies.conf as declared by the user
+# Add user-specified packages from dependencies.conf
 if (( ${#pkglist[@]} != 0 )); then
-  echo -e "\e[36m[$0]: Installing user-specified packages...\e[0m"
+  yay_packages+=("${pkglist[@]}")
+fi
+
+# Collect dependencies from meta-packages
+metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
+metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
+metapkgs+=(./arch-packages/illogical-impulse-hyprland)
+metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
+metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
+[[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
+  metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
+
+for i in "${metapkgs[@]}"; do
+  if [ -f "$i/PKGBUILD" ]; then
+    source "$i/PKGBUILD"
+    yay_packages+=("${depends[@]}")
+  fi
+done
+
+# Install all collected packages in a single command
+if (( ${#yay_packages[@]} != 0 )); then
+  echo -e "\e[36m[$0]: Installing all packages via yay...\e[0m"
   if $ask; then
-    v yay -S --needed ${pkglist[*]}
+    v yay -S --needed "${yay_packages[@]}"
   else
-    v yay -S --needed --noconfirm ${pkglist[*]}
+    v yay -S --needed --noconfirm "${yay_packages[@]}"
   fi
 fi
 
@@ -331,11 +351,7 @@ install-local-pkgbuild() {
   local installflags=$2
 
   x pushd $location
-
-  source ./PKGBUILD
-  x yay -S $installflags --asdeps "${depends[@]}"
   x makepkg -Asi --noconfirm
-
   x popd
 }
 
@@ -348,7 +364,7 @@ metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
 [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
   metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
 
-# Combine all meta-package installations into a single command
+# Install all meta-packages
 echo -e "\e[36m[$0]: Installing meta-packages...\e[0m"
 for i in "${metapkgs[@]}"; do
   metainstallflags="--needed"
