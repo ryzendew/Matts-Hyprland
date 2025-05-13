@@ -28,16 +28,38 @@ source ./scriptdata/installers
 source ./scriptdata/options
 
 #####################################################################################
-if ! command -v pacman >/dev/null 2>&1; then 
-  printf "\e[31m[$0]: pacman not found, it seems that the system is not ArchLinux or Arch-based distros. Aborting...\e[0m\n"
-  exit 1
+# Detect OS and package manager
+IS_PIKAOS=false
+if [ -f /etc/os-release ]; then
+  source /etc/os-release
+  if [[ "$ID" == "pikaos" ]]; then
+    IS_PIKAOS=true
+    echo -e "\e[32m[$0]: Detected PikaOS 4\e[0m"
+  fi
 fi
+
+if $IS_PIKAOS; then
+  # PikaOS is Debian-based, use apt
+  if ! command -v apt >/dev/null 2>&1; then
+    printf "\e[31m[$0]: apt not found on PikaOS. Aborting...\e[0m\n"
+    exit 1
+  fi
+else
+  # Arch-based systems
+  if ! command -v pacman >/dev/null 2>&1; then 
+    printf "\e[31m[$0]: pacman not found, it seems that the system is not ArchLinux or Arch-based distros. Aborting...\e[0m\n"
+    exit 1
+  fi
+fi
+
 prevent_sudo_or_root
 
 startask () {
   printf "\e[34m[$0]: Hi there! Before we start:\n"
-  printf 'This script 1. only works for ArchLinux and Arch-based distros.\n'
-  printf '            2. does not handle system-level/hardware stuff like Nvidia drivers\n'
+  printf 'This script works for:\n'
+  printf '  1. ArchLinux and Arch-based distros\n'
+  printf '  2. PikaOS 4\n'
+  printf '  3. Does not handle system-level/hardware stuff like Nvidia drivers\n'
   printf "\e[31m"
   
   printf "Would you like to create a backup for \"$XDG_CONFIG_HOME\" and \"$HOME/.local/\" folders?\n[y/N]: "
@@ -74,137 +96,191 @@ set -e
 #####################################################################################
 printf "\e[36m[$0]: 1. Get packages and setup user groups/services\n\e[0m"
 
-# Issue #363
-case $SKIP_SYSUPDATE in
-  true) sleep 0;;
-  *) v sudo pacman -Syu;;
-esac
+if $IS_PIKAOS; then
+  # PikaOS package installation
+  case $SKIP_SYSUPDATE in
+    true) sleep 0;;
+    *) v sudo apt update && sudo apt upgrade -y;;
+  esac
 
-remove_bashcomments_emptylines ${DEPLISTFILE} ./cache/dependencies_stripped.conf
-readarray -t pkglist < ./cache/dependencies_stripped.conf
+  # Install PikaOS Hyprland packages
+  echo -e "\e[36m[$0]: Installing PikaOS Hyprland packages...\e[0m"
+  v sudo apt install -y hyprland-git hyprpaper-git hyprlock-git hypridle-git
 
-# Use yay. Because paru does not support cleanbuild.
-# Also see https://wiki.hyprland.org/FAQ/#how-do-i-update
-if ! command -v yay >/dev/null 2>&1;then
-  echo -e "\e[33m[$0]: \"yay\" not found.\e[0m"
-  showfun install-yay
-  v install-yay
-fi
+  # Install system dependencies
+  echo -e "\e[36m[$0]: Installing system dependencies...\e[0m"
+  v sudo apt install -y \
+    git \
+    build-essential \
+    meson \
+    ninja-build \
+    pkg-config \
+    gcc \
+    gtk4 \
+    gtk4-layer-shell \
+    glib2 \
+    plasma-browser-integration \
+    bluez \
+    i2c-tools
 
-# --- Batch package installation setup ---
-yay_pkgs=()
-pacman_pkgs=()
-pacmanU_pkgs=()
-
-# Add repo dependencies (HyprMenu build deps, etc.)
-pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration)
-
-# Add extra packages from dependencies.conf as declared by the user
-yay_pkgs+=("${pkglist[@]}")
-
-# Add meta-packages (local PKGBUILDs)
-metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
-metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
-metapkgs+=(./arch-packages/illogical-impulse-hyprland)
-metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
-metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
-[[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
-  metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
-
-for i in "${metapkgs[@]}"; do
-  if [ -f "$i/PKGBUILD" ]; then
-    source "$i/PKGBUILD"
-    yay_pkgs+=("${depends[@]}")
-    # Build the package and collect the resulting .pkg.tar.zst for pacman -U
-    pushd "$i"
-    makepkg -sf --noconfirm
-    for pkgfile in ./*.pkg.tar.zst; do
-      pacmanU_pkgs+=("$i/$pkgfile")
-    done
-    popd
+  # Install ydotool (if not in repos, build from source)
+  if ! apt-cache show ydotool >/dev/null 2>&1; then
+    echo -e "\e[33m[$0]: ydotool not found in repos, building from source...\e[0m"
+    git clone https://github.com/ReimuNotMoe/ydotool.git
+    cd ydotool
+    mkdir build && cd build
+    cmake ..
+    make
+    sudo make install
+    cd ../..
+    rm -rf ydotool
+  else
+    v sudo apt install -y ydotool
   fi
-done
 
-# --- Batch install all collected packages ---
-if (( ${#pacman_pkgs[@]} )); then
-  echo -e "\e[36m[$0]: Installing all repo packages via pacman...\e[0m"
-  sudo pacman -S --needed --noconfirm "${pacman_pkgs[@]}"
-fi
+  # Install Python packages using uv
+  showfun install-python-packages
+  v install-python-packages
 
-if (( ${#yay_pkgs[@]} )); then
-  echo -e "\e[36m[$0]: Installing all AUR/extra packages via yay...\e[0m"
-  yay -S --needed --noconfirm "${yay_pkgs[@]}"
-fi
+  # Setup user groups and services
+  v sudo usermod -aG video,i2c,input "$(whoami)"
+  v bash -c "echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf"
+  v systemctl --user enable ydotool --now
+  v sudo systemctl enable bluetooth --now
+  v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
+  v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+else
+  # Original Arch-based installation logic
+  case $SKIP_SYSUPDATE in
+    true) sleep 0;;
+    *) v sudo pacman -Syu;;
+  esac
 
-if (( ${#pacmanU_pkgs[@]} )); then
-  echo -e "\e[36m[$0]: Installing all local PKGBUILD packages via pacman -U...\e[0m"
-  sudo pacman -U --noconfirm "${pacmanU_pkgs[@]}"
-fi
+  remove_bashcomments_emptylines ${DEPLISTFILE} ./cache/dependencies_stripped.conf
+  readarray -t pkglist < ./cache/dependencies_stripped.conf
 
-showfun handle-deprecated-dependencies
-v handle-deprecated-dependencies
+  # Use yay. Because paru does not support cleanbuild.
+  # Also see https://wiki.hyprland.org/FAQ/#how-do-i-update
+  if ! command -v yay >/dev/null 2>&1;then
+    echo -e "\e[33m[$0]: \"yay\" not found.\e[0m"
+    showfun install-yay
+    v install-yay
+  fi
 
-# https://github.com/end-4/dots-hyprland/issues/581
-# yay -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
-install-local-pkgbuild() {
-	local location=$1
-	local installflags=$2
+  # --- Batch package installation setup ---
+  yay_pkgs=()
+  pacman_pkgs=()
+  pacmanU_pkgs=()
 
-	x pushd $location
+  # Add repo dependencies (HyprMenu build deps, etc.)
+  pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration)
 
-	source ./PKGBUILD
-	x yay -S $installflags --asdeps "${depends[@]}"
-	x makepkg -Asi --noconfirm
+  # Add extra packages from dependencies.conf as declared by the user
+  yay_pkgs+=("${pkglist[@]}")
 
-	x popd
-}
+  # Add meta-packages (local PKGBUILDs)
+  metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
+  metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
+  metapkgs+=(./arch-packages/illogical-impulse-hyprland)
+  metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
+  metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
+  [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
+    metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
 
-# Install core dependencies from the meta-packages
-metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
-metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
-metapkgs+=(./arch-packages/illogical-impulse-hyprland)
-metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
-metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
-[[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
-  metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
-
-for i in "${metapkgs[@]}"; do
-	metainstallflags="--needed"
-	$ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
-	v install-local-pkgbuild "$i" "$metainstallflags"
-done
-
-# These python packages are installed using uv, not pacman.
-showfun install-python-packages
-v install-python-packages
-
-## Optional dependencies
-if pacman -Qs ^plasma-browser-integration$ ;then SKIP_PLASMAINTG=true;fi
-case $SKIP_PLASMAINTG in
-  true) sleep 0;;
-  *)
-    if $ask;then
-      echo -e "\e[33m[$0]: NOTE: The size of \"plasma-browser-integration\" is about 250 MiB.\e[0m"
-      echo -e "\e[33mIt is needed if you want playtime of media in Firefox to be shown on the music controls widget.\e[0m"
-      echo -e "\e[33mInstall it? [y/N]\e[0m"
-      read -p "====> " p
-    else
-      p=y
+  for i in "${metapkgs[@]}"; do
+    if [ -f "$i/PKGBUILD" ]; then
+      source "$i/PKGBUILD"
+      yay_pkgs+=("${depends[@]}")
+      # Build the package and collect the resulting .pkg.tar.zst for pacman -U
+      pushd "$i"
+      makepkg -sf --noconfirm
+      for pkgfile in ./*.pkg.tar.zst; do
+        pacmanU_pkgs+=("$i/$pkgfile")
+      done
+      popd
     fi
-    case $p in
-      y) x sudo pacman -S --needed --noconfirm plasma-browser-integration ;;
-      *) echo "Ok, won't install"
-    esac
-    ;;
-esac
+  done
 
-v sudo usermod -aG video,i2c,input "$(whoami)"
-v bash -c "echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf"
-v systemctl --user enable ydotool --now
-v sudo systemctl enable bluetooth --now
-v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
-v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  # --- Batch install all collected packages ---
+  if (( ${#pacman_pkgs[@]} )); then
+    echo -e "\e[36m[$0]: Installing all repo packages via pacman...\e[0m"
+    sudo pacman -S --needed --noconfirm "${pacman_pkgs[@]}"
+  fi
 
+  if (( ${#yay_pkgs[@]} )); then
+    echo -e "\e[36m[$0]: Installing all AUR/extra packages via yay...\e[0m"
+    yay -S --needed --noconfirm "${yay_pkgs[@]}"
+  fi
+
+  if (( ${#pacmanU_pkgs[@]} )); then
+    echo -e "\e[36m[$0]: Installing all local PKGBUILD packages via pacman -U...\e[0m"
+    sudo pacman -U --noconfirm "${pacmanU_pkgs[@]}"
+  fi
+
+  showfun handle-deprecated-dependencies
+  v handle-deprecated-dependencies
+
+  # https://github.com/end-4/dots-hyprland/issues/581
+  # yay -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
+  install-local-pkgbuild() {
+    local location=$1
+    local installflags=$2
+
+    x pushd $location
+
+    source ./PKGBUILD
+    x yay -S $installflags --asdeps "${depends[@]}"
+    x makepkg -Asi --noconfirm
+
+    x popd
+  }
+
+  # Install core dependencies from the meta-packages
+  metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
+  metapkgs+=(./arch-packages/illogical-impulse-agsv1-git)
+  metapkgs+=(./arch-packages/illogical-impulse-hyprland)
+  metapkgs+=(./arch-packages/illogical-impulse-microtex-git)
+  metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
+  [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
+    metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
+
+  for i in "${metapkgs[@]}"; do
+    metainstallflags="--needed"
+    $ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
+    v install-local-pkgbuild "$i" "$metainstallflags"
+  done
+
+  # These python packages are installed using uv, not pacman.
+  showfun install-python-packages
+  v install-python-packages
+
+  ## Optional dependencies
+  if pacman -Qs ^plasma-browser-integration$ ;then SKIP_PLASMAINTG=true;fi
+  case $SKIP_PLASMAINTG in
+    true) sleep 0;;
+    *)
+      if $ask;then
+        echo -e "\e[33m[$0]: NOTE: The size of \"plasma-browser-integration\" is about 250 MiB.\e[0m"
+        echo -e "\e[33mIt is needed if you want playtime of media in Firefox to be shown on the music controls widget.\e[0m"
+        echo -e "\e[33mInstall it? [y/N]\e[0m"
+        read -p "====> " p
+      else
+        p=y
+      fi
+      case $p in
+        y) x sudo pacman -S --needed --noconfirm plasma-browser-integration ;;
+        *) echo "Ok, won't install"
+      esac
+      ;;
+  esac
+
+  v sudo usermod -aG video,i2c,input "$(whoami)"
+  v bash -c "echo i2c-dev | sudo tee /etc/modules-load.d/i2c-dev.conf"
+  v systemctl --user enable ydotool --now
+  v sudo systemctl enable bluetooth --now
+  v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
+  v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+fi
 
 #####################################################################################
 printf "\e[36m[$0]: 2. Copying + Configuring\e[0m\n"
