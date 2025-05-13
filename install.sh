@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
 export base="$(pwd)"
+mkdir -p "$base/cache"
 
 # ===================== Inlined: environment-variables =====================
 # XDG Base Directory variables
