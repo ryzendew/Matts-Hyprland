@@ -1,18 +1,221 @@
 #!/usr/bin/env bash
 cd "$(dirname "$0")"
 export base="$(pwd)"
-source ./scriptdata/environment-variables
-source ./scriptdata/functions
-source ./scriptdata/installers
-source ./scriptdata/options
+
+# Environment variables
+XDG_BIN_HOME=${XDG_BIN_HOME:-$HOME/.local/bin}
+XDG_CACHE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}
+XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
+XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
+XDG_STATE_HOME=${XDG_STATE_HOME:-$HOME/.local/state}
+BACKUP_DIR=${BACKUP_DIR:-$HOME/backup}
+
+# Default options
+ask=true
+SKIP_SYSUPDATE=false
+SKIP_HYPRLAND=false
+SKIP_FISH=false
+SKIP_MISCCONF=false
+SKIP_PLASMAINTG=false
+DEPLISTFILE=./scriptdata/dependencies.conf
+
+# Helper functions
+function try { "$@" || sleep 0; }
+
+function v() {
+  echo -e "####################################################"
+  echo -e "\e[34m[$0]: Next command:\e[0m"
+  echo -e "\e[32m$@\e[0m"
+  execute=true
+  if $ask;then
+    while true;do
+      echo -e "\e[34mExecute? \e[0m"
+      echo "  y = Yes"
+      echo "  e = Exit now"
+      echo "  s = Skip this command (NOT recommended - your setup might not work correctly)"
+      echo "  yesforall = Yes and don't ask again; NOT recommended unless you really sure"
+      read -p "====> " p
+      case $p in
+        [yY]) echo -e "\e[34mOK, executing...\e[0m" ;break ;;
+        [eE]) echo -e "\e[34mExiting...\e[0m" ;exit ;break ;;
+        [sS]) echo -e "\e[34mAlright, skipping this one...\e[0m" ;execute=false ;break ;;
+        "yesforall") echo -e "\e[34mAlright, won't ask again. Executing...\e[0m"; ask=false ;break ;;
+        *) echo -e "\e[31mPlease enter [y/e/s/yesforall].\e[0m";;
+      esac
+    done
+  fi
+  if $execute;then x "$@";else
+    echo -e "\e[33m[$0]: Skipped \"$@\"\e[0m"
+  fi
+}
+
+function x() {
+  if "$@";then cmdstatus=0;else cmdstatus=1;fi # 0=normal; 1=failed; 2=failed but ignored
+  while [ $cmdstatus == 1 ] ;do
+    echo -e "\e[31m[$0]: Command \"\e[32m$@\e[31m\" has failed."
+    echo -e "You may need to resolve the problem manually BEFORE repeating this command."
+    echo -e "[Tip] If a certain package is failing to install, try installing it separately in another terminal.\e[0m"
+    echo "  r = Repeat this command (DEFAULT)"
+    echo "  e = Exit now"
+    echo "  i = Ignore this error and continue (your setup might not work correctly)"
+    read -p " [R/e/i]: " p
+    case $p in
+      [iI]) echo -e "\e[34mAlright, ignore and continue...\e[0m";cmdstatus=2;;
+      [eE]) echo -e "\e[34mAlright, will exit.\e[0m";break;;
+      *) echo -e "\e[34mOK, repeating...\e[0m"
+         if "$@";then cmdstatus=0;else cmdstatus=1;fi
+         ;;
+    esac
+  done
+  case $cmdstatus in
+    0) echo -e "\e[34m[$0]: Command \"\e[32m$@\e[34m\" finished.\e[0m";;
+    1) echo -e "\e[31m[$0]: Command \"\e[32m$@\e[31m\" has failed. Exiting...\e[0m";exit 1;;
+    2) echo -e "\e[31m[$0]: Command \"\e[32m$@\e[31m\" has failed but ignored by user.\e[0m";;
+  esac
+}
+
+function showfun() {
+  echo -e "\e[34m[$0]: The definition of function \"$1\" is as follows:\e[0m"
+  printf "\e[32m"
+  type -a $1
+  printf "\e[97m"
+}
+
+function remove_bashcomments_emptylines(){
+  mkdir -p $(dirname $2)
+  cat $1 | sed -e '/^[[:blank:]]*#/d;s/#.*//' -e '/^[[:space:]]*$/d' > $2
+}
+
+function prevent_sudo_or_root(){
+  case $(whoami) in
+    root)echo -e "\e[31m[$0]: This script is NOT to be executed with sudo or as root. Aborting...\e[0m";exit 1;;
+  esac
+}
+
+function backup_configs() {
+  local backup_dir="$BACKUP_DIR"
+  mkdir -p "$backup_dir"
+  echo "Backing up $XDG_CONFIG_HOME to $backup_dir/config_backup"
+  rsync -av --progress "$XDG_CONFIG_HOME/" "$backup_dir/config_backup/"
+  
+  echo "Backing up $HOME/.local to $backup_dir/local_backup"
+  rsync -av --progress "$HOME/.local/" "$backup_dir/local_backup/"
+}
+
+function install-yay() {
+  x sudo pacman -S --needed --noconfirm base-devel
+  x git clone https://aur.archlinux.org/yay-bin.git /tmp/buildyay
+  x cd /tmp/buildyay
+  x makepkg -o
+  x makepkg -se
+  x makepkg -i --noconfirm
+  x cd $base
+  rm -rf /tmp/buildyay
+}
+
+function install-python-packages() {
+  UV_NO_MODIFY_PATH=1
+  ILLOGICAL_IMPULSE_VIRTUAL_ENV=$XDG_STATE_HOME/ags/.venv
+  x mkdir -p $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)
+  # we need python 3.12 https://github.com/python-pillow/Pillow/issues/8089
+  x uv venv --prompt .venv $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV) -p 3.12
+  x source $(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate
+  x uv pip install -r scriptdata/requirements.txt
+  x deactivate # We don't need the virtual environment anymore
+}
+
+function handle-deprecated-dependencies() {
+  printf "\e[36m[$0]: Removing deprecated dependencies:\e[0m\n"
+  for i in illogical-impulse-{microtex,pymyc-aur,ags,agsv1} {hyprutils,hyprpicker,hyprlang,hypridle,hyprland-qt-support,hyprland-qtutils,hyprlock,xdg-desktop-portal-hyprland,hyprcursor,hyprwayland-scanner,hyprland}-git;do try sudo pacman --noconfirm -Rdd $i;done
+  # Convert old dependencies to non explicit dependencies so that they can be orphaned if not in meta packages
+  remove_bashcomments_emptylines ./scriptdata/previous_dependencies.conf ./cache/old_deps_stripped.conf
+  readarray -t old_deps_list < ./cache/old_deps_stripped.conf
+  pacman -Qeq > ./cache/pacman_explicit_packages
+  readarray -t explicitly_installed < ./cache/pacman_explicit_packages
+
+  echo "Attempting to set previously explicitly installed deps as implicit..."
+  for i in "${explicitly_installed[@]}"; do for j in "${old_deps_list[@]}"; do
+    [ "$i" = "$j" ] && yay -D --asdeps "$i"
+  done; done
+
+  return 0
+}
+
+function showhelp() {
+  echo -e "Syntax: $0 [Options]...
+
+Idempotent installation script for dotfiles.
+If no option is specified, run default install process.
+
+  -h, --help                Print this help message and exit
+  -f, --force               (Dangerous) Force mode without any confirm
+  -c, --clean               Clean the build cache first
+  -s, --skip-sysupdate      Skip \"sudo pacman -Syu\"
+      --skip-hyprland       Skip installing the config for Hyprland
+      --skip-fish           Skip installing the config for Fish
+      --skip-plasmaintg     Skip installing plasma-browser-integration
+      --skip-miscconf       Skip copying the dirs and files to \".configs\" except for
+                            AGS, Fish and Hyprland
+      --deplistfile <path>  Specify a dependency list file. By default
+                            \"./scriptdata/dependencies.conf\"
+      --fontset <set>       (Unavailable yet) Use a set of pre-defined font and config
+"
+}
+
+function cleancache() {
+  rm -rf "$base/cache"
+}
+
+# Parse command line arguments
+para=$(getopt \
+       -o hfk:cs \
+       -l help,force,fontset:,deplistfile:,clean,skip-sysupdate,skip-fish,skip-hyprland,skip-plasmaintg,skip-miscconf \
+       -n "$0" -- "$@")
+[ $? != 0 ] && echo "$0: Error when getopt, please recheck parameters." && exit 1
+
+# Phase 1: Process help and clean options first
+eval set -- "$para"
+while true ; do
+  case "$1" in
+    -h|--help) showhelp;exit;;
+    -c|--clean) cleancache;shift;;
+    --) break ;;
+    *) shift ;;
+  esac
+done
+
+# Phase 2: Process remaining options
+eval set -- "$para"
+while true ; do
+  case "$1" in
+    -c|--clean) shift;;
+    -f|--force) ask=false;shift;;
+    -s|--skip-sysupdate) SKIP_SYSUPDATE=true;shift;;
+    --skip-hyprland) SKIP_HYPRLAND=true;shift;;
+    --skip-fish) SKIP_FISH=true;shift;;
+    --skip-miscconf) SKIP_MISCCONF=true;shift;;
+    --skip-plasmaintg) SKIP_PLASMAINTG=true;shift;;
+    --deplistfile)
+      if [ -f "$2" ];then
+        DEPLISTFILE="$2"
+      else
+        echo -e "Deplist file \"$2\" does not exist.";exit 1
+      fi
+      shift 2 ;;
+    --fontset)
+      case $2 in
+        "default"|"zh-CN"|"vi") fontset="$2";;
+        *) echo -e "Wrong argument for $1.";exit 1;;
+      esac
+      echo "The fontset is ${fontset}."
+      shift 2 ;;
+    --) break ;;
+    *) echo -e "$0: Wrong parameters.";exit 1;;
+  esac
+done
 
 # Bulletproof preamble and error-checking block
 set -euo pipefail
-
-# Check for required helper scripts
-for f in scriptdata/environment-variables scriptdata/functions scriptdata/installers scriptdata/options; do
-    [ -f "$f" ] || { echo "[FATAL] Missing required file: $f"; exit 1; }
-done
 
 # Check for network connectivity
 ping -c 1 archlinux.org >/dev/null 2>&1 || { echo "[FATAL] No network connection. Please connect to the internet."; exit 1; }
@@ -22,20 +225,20 @@ sudo -v || { echo "[FATAL] You need sudo privileges to run this script."; exit 1
 
 # Check for required system tools
 for cmd in rsync curl git make gcc; do
-    command -v $cmd >/dev/null 2>&1 || { echo "[FATAL] $cmd is required but not installed."; exit 1; }
+  command -v $cmd >/dev/null 2>&1 || { echo "[FATAL] $cmd is required but not installed."; exit 1; }
 done
 
 # Check for Python 3.12+
 python3 --version 2>/dev/null | grep -q '3.12' || { echo "[FATAL] Python 3.12+ is required. Please install it before proceeding."; exit 1; }
 
-#####################################################################################
 if ! command -v pacman >/dev/null 2>&1; then 
   printf "\e[31m[$0]: pacman not found, it seems that the system is not ArchLinux or Arch-based distros. Aborting...\e[0m\n"
   exit 1
 fi
+
 prevent_sudo_or_root
 
-startask () {
+startask() {
   printf "\e[34m[$0]: Hi there! Before we start:\n"
   printf 'This script 1. only works for ArchLinux and Arch-based distros.\n'
   printf '            2. does not handle system-level/hardware stuff like Nvidia drivers\n'
@@ -52,7 +255,6 @@ startask () {
       ;;
   esac
   
-
   printf '\n'
   printf 'Do you want to confirm every time before a command executes?\n'
   printf '  y = Yes, ask me before executing each of them. (DEFAULT)\n'
@@ -67,12 +269,12 @@ startask () {
 }
 
 case $ask in
-  false)sleep 0 ;;
-  *)startask ;;
+  false) sleep 0 ;;
+  *) startask ;;
 esac
 
 set -e
-#####################################################################################
+
 printf "\e[36m[$0]: 1. Get packages and setup user groups/services\n\e[0m"
 
 # Issue #363
@@ -94,13 +296,13 @@ fi
 
 # Install extra packages from dependencies.conf as declared by the user
 if (( ${#pkglist[@]} != 0 )); then
-	if $ask; then
-		# execute per element of the array $pkglist
-		for i in "${pkglist[@]}";do v yay -S --needed $i;done
-	else
-		# execute for all elements of the array $pkglist in one line
-		v yay -S --needed --noconfirm ${pkglist[*]}
-	fi
+  if $ask; then
+    # execute per element of the array $pkglist
+    for i in "${pkglist[@]}";do v yay -S --needed $i;done
+  else
+    # execute for all elements of the array $pkglist in one line
+    v yay -S --needed --noconfirm ${pkglist[*]}
+  fi
 fi
 
 showfun handle-deprecated-dependencies
@@ -109,16 +311,16 @@ v handle-deprecated-dependencies
 # https://github.com/end-4/dots-hyprland/issues/581
 # yay -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
 install-local-pkgbuild() {
-	local location=$1
-	local installflags=$2
+  local location=$1
+  local installflags=$2
 
-	x pushd $location
+  x pushd $location
 
-	source ./PKGBUILD
-	x yay -S $installflags --asdeps "${depends[@]}"
-	x makepkg -Asi --noconfirm
+  source ./PKGBUILD
+  x yay -S $installflags --asdeps "${depends[@]}"
+  x makepkg -Asi --noconfirm
 
-	x popd
+  x popd
 }
 
 # Install core dependencies from the meta-packages
@@ -131,9 +333,9 @@ metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
   metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
 
 for i in "${metapkgs[@]}"; do
-	metainstallflags="--needed"
-	$ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
-	v install-local-pkgbuild "$i" "$metainstallflags"
+  metainstallflags="--needed"
+  $ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
+  v install-local-pkgbuild "$i" "$metainstallflags"
 done
 
 # Ensure uv (Python package manager) is installed
@@ -189,7 +391,6 @@ cd "$base/Extras/HyprMenu"
 sudo ./build.sh --install
 cd "$base"
 
-#####################################################################################
 printf "\e[36m[$0]: 2. Copying + Configuring\e[0m\n"
 
 # In case some folders does not exists
@@ -204,7 +405,6 @@ case $SKIP_MISCCONF in
   true) sleep 0;;
   *)
     for i in $(find .config/ -mindepth 1 -maxdepth 1 ! -name 'ags' ! -name 'fish' ! -name 'hypr' -exec basename {} \;); do
-#      i=".config/$i"
       echo "[$0]: Found target: .config/$i"
       if [ -d ".config/$i" ];then v rsync -av --delete ".config/$i/" "$XDG_CONFIG_HOME/$i/"
       elif [ -f ".config/$i" ];then v rsync -av ".config/$i" "$XDG_CONFIG_HOME/$i"
@@ -228,7 +428,6 @@ case $SKIP_AGS in
     t="$XDG_CONFIG_HOME/ags/user_options.jsonc"
     if [ -f $t ];then
       echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
-      # v cp -f .config/ags/user_options.jsonc $t.new
       existed_ags_opt=y
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
@@ -248,116 +447,26 @@ case $SKIP_HYPRLAND in
       echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
       if [ -f "$XDG_STATE_HOME/ags/user/firstrun.txt" ]
       then
-        v cp -f .config/hypr/hyprland.conf $t.new
-        existed_hypr_conf=y
+        echo -e "\e[33m[$0]: First run detected. Will copy the default config.\e[0m"
+        v cp .config/hypr/hyprland.conf $t
       else
-        v mv $t $t.old
-        v cp -f .config/hypr/hyprland.conf $t
-        existed_hypr_conf_firstrun=y
+        echo -e "\e[33m[$0]: Will NOT copy the default config.\e[0m"
       fi
     else
       echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
       v cp .config/hypr/hyprland.conf $t
-      existed_hypr_conf=n
-    fi
-    t="$XDG_CONFIG_HOME/hypr/hypridle.conf"
-    if [ -f $t ];then
-      echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
-      v cp -f .config/hypr/hypridle.conf $t.new
-      existed_hypridle_conf=y
-    else
-      echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
-      v cp .config/hypr/hypridle.conf $t
-      existed_hypridle_conf=n
-    fi
-    t="$XDG_CONFIG_HOME/hypr/hyprlock.conf"
-    if [ -f $t ];then
-      echo -e "\e[34m[$0]: \"$t\" already exists.\e[0m"
-      v cp -f .config/hypr/hyprlock.conf $t.new
-      existed_hyprlock_conf=y
-    else
-      echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
-      v cp .config/hypr/hyprlock.conf $t
-      existed_hyprlock_conf=n
-    fi
-    t="$XDG_CONFIG_HOME/hypr/custom"
-    if [ -d $t ];then
-      echo -e "\e[34m[$0]: \"$t\" already exists, will not do anything.\e[0m"
-    else
-      echo -e "\e[33m[$0]: \"$t\" does not exist yet.\e[0m"
-      v rsync -av --delete .config/hypr/custom/ $t/
     fi
     ;;
 esac
 
+printf "\e[36m[$0]: 3. Finalizing\e[0m\n"
 
-# some foldes (eg. .local/bin) should be processed separately to avoid `--delete' for rsync,
-# since the files here come from different places, not only about one program.
-v rsync -av ".local/bin/" "$XDG_BIN_HOME"
+# Make sure that the user has the right permissions
+v chmod -R u+rw $XDG_CONFIG_HOME
+v chmod -R u+rw $XDG_DATA_HOME
 
-# Prevent hyprland from not fully loaded
-sleep 1
-try hyprctl reload
+# Make sure that the user has the right permissions for HyprMenu
+v chmod -R u+rw "$base/Extras/HyprMenu"
 
-existed_zsh_conf=n
-grep -q 'source ${XDG_CONFIG_HOME:-~/.config}/zshrc.d/dots-hyprland.zsh' ~/.zshrc && existed_zsh_conf=y
-
-warn_files=()
-warn_files_tests=()
-warn_files_tests+=(/usr/local/bin/ags)
-warn_files_tests+=(/usr/local/etc/pam.d/ags)
-warn_files_tests+=(/usr/local/lib/{GUtils-1.0.typelib,Gvc-1.0.typelib,libgutils.so,libgvc.so})
-warn_files_tests+=(/usr/local/share/com.github.Aylur.ags)
-warn_files_tests+=(/usr/local/share/fonts/TTF/Rubik{,-Italic}'[wght]'.ttf)
-warn_files_tests+=(/usr/local/share/licenses/ttf-rubik)
-warn_files_tests+=(/usr/local/share/fonts/TTF/Gabarito-{Black,Bold,ExtraBold,Medium,Regular,SemiBold}.ttf)
-warn_files_tests+=(/usr/local/share/licenses/ttf-gabarito)
-warn_files_tests+=(/usr/local/share/icons/OneUI{,-dark,-light})
-warn_files_tests+=(/usr/local/share/icons/Bibata-Modern-Classic)
-warn_files_tests+=(/usr/local/bin/{LaTeX,res})
-for i in ${warn_files_tests[@]}; do
-  echo $i
-  test -f $i && warn_files+=($i)
-  test -d $i && warn_files+=($i)
-done
-
-#####################################################################################
-printf "\e[36m[$0]: Finished. See the \"Import Manually\" folder and grab anything you need.\e[0m\n"
-printf "\n"
-printf "\e[36mIt is recommended to check out\n"
-printf "https://end-4.github.io/dots-hyprland-wiki/en/i-i/01setup/#post-installation \n"
-printf "for hints on launching Hyprland.\e[0m\n"
-printf "\n"
-printf "\e[36mIf you are already running Hyprland,\e[0m\n"
-printf "\e[36mPress \e[30m\e[46m Ctrl+Super+T \e[0m\e[36m to select a wallpaper\e[0m\n"
-printf "\e[36mPress \e[30m\e[46m Super+/ \e[0m\e[36m for a list of keybinds\e[0m\n"
-printf "\n"
-
-case $existed_ags_opt in
-  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/ags/user_options.jsonc\" already existed before and we didn't overwrite it. \e[0m\n"
-#    printf "\e[33mPlease use \"$XDG_CONFIG_HOME/ags/user_options.jsonc.new\" as a reference for a proper format.\e[0m\n"
-;;esac
-case $existed_hypr_conf_firstrun in
-  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" already existed before. As it seems it is your first run, we replaced it with a new one. \e[0m\n"
-     printf "\e[33mAs it seems it is your first run, we replaced it with a new one. The old one has been renamed to \"$XDG_CONFIG_HOME/hypr/hyprland.conf.old\".\e[0m\n"
-;;esac
-case $existed_hypr_conf in
-  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprland.conf\" already existed before and we didn't overwrite it. \e[0m\n"
-     printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hyprland.conf.new\" as a reference for a proper format.\e[0m\n"
-;;esac
-case $existed_hypridle_conf in
-  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hypridle.conf\" already existed before and we didn't overwrite it. \e[0m\n"
-     printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hypridle.conf.new\" as a reference for a proper format.\e[0m\n"
-;;esac
-case $existed_hyprlock_conf in
-  y) printf "\n\e[33m[$0]: Warning: \"$XDG_CONFIG_HOME/hypr/hyprlock.conf\" already existed before and we didn't overwrite it. \e[0m\n"
-     printf "\e[33mPlease use \"$XDG_CONFIG_HOME/hypr/hyprlock.conf.new\" as a reference for a proper format.\e[0m\n"
-;;esac
-
-if [[ -z "${ILLOGICAL_IMPULSE_VIRTUAL_ENV}" ]]; then
-  printf "\n\e[31m[$0]: \!! Important \!! : Please ensure environment variable \e[0m \$ILLOGICAL_IMPULSE_VIRTUAL_ENV \e[31m is set to proper value (by default \"~/.local/state/ags/.venv\"), or AGS config will not work. We have already provided this configuration in ~/.config/hypr/hyprland/env.conf, but you need to ensure it is included in hyprland.conf, and also a restart is needed for applying it.\e[0m\n"
-fi
-
-if [[ ! -z "${warn_files[@]}" ]]; then
-  printf "\n\e[31m[$0]: \!! Important \!! : Please delete \e[0m ${warn_files[*]} \e[31m manually as soon as possible, since we\'re now using AUR package or local PKGBUILD to install them for Arch(based) Linux distros, and they'll take precedence over our installation, or at least take up more space.\e[0m\n"
-fi
+printf "\e[36m[$0]: Done!\e[0m\n"
+printf "\e[36m[$0]: Please log out and log back in to apply all changes.\e[0m\n"
