@@ -145,6 +145,17 @@ v sudo systemctl enable bluetooth --now
 v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
+# Install HyprMenu (modern launcher for Hyprland)
+echo -e "\e[36m[$0]: Installing HyprMenu (modern launcher for Hyprland)\e[0m"
+if [ ! -d "$base/Extras/HyprMenu" ]; then
+  git clone --depth=1 https://github.com/ryzendew/HyprMenu.git "$base/Extras/HyprMenu"
+else
+  echo "[$0]: HyprMenu directory already exists, pulling latest changes."
+  git -C "$base/Extras/HyprMenu" pull
+fi
+cd "$base/Extras/HyprMenu"
+sudo ./build.sh --install
+cd "$base"
 
 #####################################################################################
 printf "\e[36m[$0]: 2. Copying + Configuring\e[0m\n"
