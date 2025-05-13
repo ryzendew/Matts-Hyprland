@@ -28,6 +28,8 @@
 <details> 
   <summary>Instructions</summary>
 
+  
+   - **Custom logo**, make a logo folder in Pictures and name the logo you want to Arch-linux-logo.png:
    - **Prerequisite**: Your system works. That's it. You don't have to reinstall your system!
    - **Automatic**, but guided and transparent, installation for Arch(-based) Linux:
    ```bash
