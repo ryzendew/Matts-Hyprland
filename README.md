@@ -84,32 +84,6 @@ This setup uses [HyprMenu](https://github.com/ryzendew/HyprMenu) as the main app
     <h3></h3>
 </div>
 
- - [@clsty](https://github.com/clsty) for making an actually good install script + many other stuff that I neglect
- - [@midn8hustlr](https://github.com/midn8hustlr) for greatly improving the color generation system
- - AGS: [Aylur's config](https://github.com/Aylur/dotfiles/tree/ags-pre-ts), [kotontrion's config](https://github.com/kotontrion/dotfiles)
- - EWW: [fufexan's config](https://github.com/fufexan/dotfiles) (he thanks more people there btw)
-
-<div align="center">
-    <h2>• stonks •</h2>
-    <h3></h3>
-</div>
-
-- Funny useful number: https://github.com/sponsors/end-4
-- Funny useless number:
-
-[![Stargazers over time](https://starchart.cc/end-4/dots-hyprland.svg?variant=adaptive)](https://starchart.cc/end-4/dots-hyprland)
-
-- *Jokes aside i do appreciate both*
-
-
-<div align="center">
-    <h2>• inspirations/copying •</h2>
-    <h3></h3>
-</div>
-
- - Inspiration: osu!lazer, Windows 11, Material Design 3, AvdanOS (concept)
- - Copying: The license allows you to. Personally I have absolutely no problem with others redistributing/recreating my work. There's no "stealing" (unless you do weird stuff and violate the license). (this note is here because some people actually asked)
-
 ## HyprMenu Dependencies
 
 To build and install HyprMenu, the following dependencies are required (all available in the official Arch Linux repositories):
