@@ -6,6 +6,28 @@ source ./scriptdata/functions
 source ./scriptdata/installers
 source ./scriptdata/options
 
+# Bulletproof preamble and error-checking block
+set -euo pipefail
+
+# Check for required helper scripts
+for f in scriptdata/environment-variables scriptdata/functions scriptdata/installers scriptdata/options; do
+    [ -f "$f" ] || { echo "[FATAL] Missing required file: $f"; exit 1; }
+done
+
+# Check for network connectivity
+ping -c 1 archlinux.org >/dev/null 2>&1 || { echo "[FATAL] No network connection. Please connect to the internet."; exit 1; }
+
+# Check for sudo privileges
+sudo -v || { echo "[FATAL] You need sudo privileges to run this script."; exit 1; }
+
+# Check for required system tools
+for cmd in rsync curl git make gcc; do
+    command -v $cmd >/dev/null 2>&1 || { echo "[FATAL] $cmd is required but not installed."; exit 1; }
+done
+
+# Check for Python 3.12+
+python3 --version 2>/dev/null | grep -q '3.12' || { echo "[FATAL] Python 3.12+ is required. Please install it before proceeding."; exit 1; }
+
 #####################################################################################
 if ! command -v pacman >/dev/null 2>&1; then 
   printf "\e[31m[$0]: pacman not found, it seems that the system is not ArchLinux or Arch-based distros. Aborting...\e[0m\n"
