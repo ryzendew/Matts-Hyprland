@@ -114,6 +114,12 @@ for i in "${metapkgs[@]}"; do
 	v install-local-pkgbuild "$i" "$metainstallflags"
 done
 
+# Ensure uv (Python package manager) is installed
+if ! command -v uv >/dev/null 2>&1; then
+  echo -e "\e[36m[$0]: Installing uv (Python package manager)\e[0m"
+  bash <(curl -LJs "https://astral.sh/uv/install.sh")
+fi
+
 # These python packages are installed using uv, not pacman.
 showfun install-python-packages
 v install-python-packages

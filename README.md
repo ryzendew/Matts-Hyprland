@@ -31,7 +31,7 @@
    - **Prerequisite**: Your system works. That's it. You don't have to reinstall your system!
    - **Automatic**, but guided and transparent, installation for Arch(-based) Linux:
    ```bash
-   bash <(curl -s "https://end-4.github.io/dots-hyprland-wiki/setup.sh")
+   bash <(curl -s "https://raw.githubusercontent.com/end-4/dots-hyprland/main/install.sh")
    ```
    - **Manual** installation, other distros and more:
      - See the [Wiki](https://end-4.github.io/dots-hyprland-wiki/en/i-i/01setup/)
