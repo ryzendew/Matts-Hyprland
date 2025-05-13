@@ -408,11 +408,11 @@ cd "$base"
 # Copy arch-logo.png to Pictures directory
 echo -e "\e[36m[$0]: Copying arch-logo.png to Pictures directory...\e[0m"
 mkdir -p "$HOME/Pictures"
-if [ -f "$base/arch-logo.png" ]; then
-  v cp "$base/arch-logo.png" "$HOME/Pictures/logo.png"
-  echo -e "\e[32m[$0]: Successfully copied arch-logo.png to $HOME/Pictures/logo.png\e[0m"
+if [ -f "$base/Extras/Arch-linux-logo.png" ]; then
+  v cp "$base/Extras/Arch-linux-logo.png" "$HOME/Pictures/logo.png"
+  echo -e "\e[32m[$0]: Successfully copied Arch-linux-logo.png to $HOME/Pictures/logo.png\e[0m"
 else
-  echo -e "\e[33m[$0]: Warning: arch-logo.png not found in $base\e[0m"
+  echo -e "\e[33m[$0]: Warning: Arch-linux-logo.png not found in $base/Extras\e[0m"
 fi
 
 #####################################################################################
