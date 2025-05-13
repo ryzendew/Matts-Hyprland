@@ -382,11 +382,6 @@ done
 # Bulletproof preamble and error-checking block
 set -euo pipefail
 
-# Check for required helper scripts
-for f in scriptdata/environment-variables scriptdata/functions scriptdata/installers scriptdata/options; do
-    [ -f "$f" ] || { echo "[FATAL] Missing required file: $f"; exit 1; }
-done
-
 # Check for network connectivity
 ping -c 1 archlinux.org >/dev/null 2>&1 || { echo "[FATAL] No network connection. Please connect to the internet."; exit 1; }
 
