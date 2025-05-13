@@ -290,30 +290,28 @@ set -e
 #####################################################################################
 printf "\e[36m[$0]: 1. Get packages and setup user groups/services\n\e[0m"
 
+# Collect all packages that need to be installed via pacman
+pacman_packages=(
+  # HyprMenu build dependencies
+  git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2
+  # System packages
+  plasma-browser-integration
+)
+
 # Issue #363
 case $SKIP_SYSUPDATE in
   true) sleep 0;;
   *) v sudo pacman -Syu;;
 esac
 
+# Install all collected packages in a single command
+if (( ${#pacman_packages[@]} != 0 )); then
+  echo -e "\e[36m[$0]: Installing all packages via pacman...\e[0m"
+  v sudo pacman -S --needed --noconfirm "${pacman_packages[@]}"
+fi
+
 remove_bashcomments_emptylines ${DEPLISTFILE} ./cache/dependencies_stripped.conf
 readarray -t pkglist < ./cache/dependencies_stripped.conf
-
-# Use yay. Because paru does not support cleanbuild.
-# Also see https://wiki.hyprland.org/FAQ/#how-do-i-update
-if ! command -v yay >/dev/null 2>&1;then
-  echo -e "\e[33m[$0]: \"yay\" not found.\e[0m"
-  showfun install-yay
-  v install-yay
-fi
-
-# Collect all packages that need to be installed via yay
-yay_packages=()
-
-# Add user-specified packages from dependencies.conf
-if (( ${#pkglist[@]} != 0 )); then
-  yay_packages+=("${pkglist[@]}")
-fi
 
 # Collect dependencies from meta-packages
 metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
@@ -324,6 +322,15 @@ metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
 [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
   metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
 
+# Collect all packages that need to be installed via yay
+yay_packages=()
+
+# Add user-specified packages from dependencies.conf
+if (( ${#pkglist[@]} != 0 )); then
+  yay_packages+=("${pkglist[@]}")
+fi
+
+# Collect dependencies from meta-packages
 for i in "${metapkgs[@]}"; do
   if [ -f "$i/PKGBUILD" ]; then
     source "$i/PKGBUILD"
