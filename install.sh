@@ -298,10 +298,16 @@ pacman_packages=(
   plasma-browser-integration
 )
 
+# Collect all packages that need to be upgraded
+upgrade_packages=()
+
 # Issue #363
 case $SKIP_SYSUPDATE in
   true) sleep 0;;
-  *) v sudo pacman -Syu;;
+  *) 
+    echo -e "\e[36m[$0]: Upgrading system packages...\e[0m"
+    v sudo pacman -Syu --noconfirm
+    ;;
 esac
 
 # Install all collected packages in a single command
