@@ -304,15 +304,18 @@ if ! command -v yay >/dev/null 2>&1;then
   v install-yay
 fi
 
+# Ensure HyprMenu build dependencies are installed
+echo -e "\e[36m[$0]: Installing dependencies for HyprMenu and other required packages...\e[0m"
+v sudo pacman -S --needed git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration
+
 # Install extra packages from dependencies.conf as declared by the user
 if (( ${#pkglist[@]} != 0 )); then
-	if $ask; then
-		# execute per element of the array $pkglist
-		for i in "${pkglist[@]}";do v yay -S --needed $i;done
-	else
-		# execute for all elements of the array $pkglist in one line
-		v yay -S --needed --noconfirm ${pkglist[*]}
-	fi
+  echo -e "\e[36m[$0]: Installing user-specified packages...\e[0m"
+  if $ask; then
+    v yay -S --needed ${pkglist[*]}
+  else
+    v yay -S --needed --noconfirm ${pkglist[*]}
+  fi
 fi
 
 showfun handle-deprecated-dependencies
@@ -321,16 +324,16 @@ v handle-deprecated-dependencies
 # https://github.com/end-4/dots-hyprland/issues/581
 # yay -Bi is kinda hit or miss, instead cd into the relevant directory and manually source and install deps
 install-local-pkgbuild() {
-	local location=$1
-	local installflags=$2
+  local location=$1
+  local installflags=$2
 
-	x pushd $location
+  x pushd $location
 
-	source ./PKGBUILD
-	x yay -S $installflags --asdeps "${depends[@]}"
-	x makepkg -Asi --noconfirm
+  source ./PKGBUILD
+  x yay -S $installflags --asdeps "${depends[@]}"
+  x makepkg -Asi --noconfirm
 
-	x popd
+  x popd
 }
 
 # Install core dependencies from the meta-packages
@@ -342,10 +345,12 @@ metapkgs+=(./arch-packages/illogical-impulse-oneui4-icons-git)
 [[ -f /usr/share/icons/Bibata-Modern-Classic/index.theme ]] || \
   metapkgs+=(./arch-packages/illogical-impulse-bibata-modern-classic-bin)
 
+# Combine all meta-package installations into a single command
+echo -e "\e[36m[$0]: Installing meta-packages...\e[0m"
 for i in "${metapkgs[@]}"; do
-	metainstallflags="--needed"
-	$ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
-	v install-local-pkgbuild "$i" "$metainstallflags"
+  metainstallflags="--needed"
+  $ask && showfun install-local-pkgbuild || metainstallflags="$metainstallflags --noconfirm"
+  v install-local-pkgbuild "$i" "$metainstallflags"
 done
 
 # Ensure uv (Python package manager) is installed
@@ -384,10 +389,6 @@ v systemctl --user enable ydotool --now
 v sudo systemctl enable bluetooth --now
 v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-
-# Ensure HyprMenu build dependencies are installed
-echo -e "\e[36m[$0]: Installing dependencies for HyprMenu (gtk4, gtk4-layer-shell, meson, ninja, pkgconf, gcc, glib2, git, base-devel)\e[0m"
-sudo pacman -S --needed git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2
 
 # Install HyprMenu (modern launcher for Hyprland)
 echo -e "\e[36m[$0]: Installing HyprMenu (modern launcher for Hyprland)\e[0m"
