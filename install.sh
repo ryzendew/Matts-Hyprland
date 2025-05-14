@@ -97,10 +97,12 @@ pacman_pkgs=()
 pacmanU_pkgs=()
 
 # Add repo dependencies (HyprMenu build deps, etc.)
-pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration)
+pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration nwg-displays nwg-look nautilus gedit ptyxis)
 
 # Add extra packages from dependencies.conf as declared by the user
 yay_pkgs+=("${pkglist[@]}")
+# Add AUR packages for file management
+yay_pkgs+=(nautilus-open-in-ptyxis)
 
 # Add meta-packages (local PKGBUILDs)
 metapkgs=(./arch-packages/illogical-impulse-{audio,python,backlight,basic,fonts-themes,gnome,gtk,portal,screencapture,widgets})
