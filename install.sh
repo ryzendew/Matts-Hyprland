@@ -97,7 +97,7 @@ pacman_pkgs=()
 pacmanU_pkgs=()
 
 # Add repo dependencies (HyprMenu build deps, etc.)
-pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration nwg-displays nwg-look nautilus gedit ptyxis)
+pacman_pkgs+=(git base-devel meson ninja pkgconf gcc gtk4 gtk4-layer-shell glib2 plasma-browser-integration nwg-displays nwg-look nautilus gedit ptyxis qt6-base cmake)
 
 # Add extra packages from dependencies.conf as declared by the user
 yay_pkgs+=("${pkglist[@]}")
@@ -207,6 +207,17 @@ v sudo systemctl enable bluetooth --now
 v gsettings set org.gnome.desktop.interface font-name 'Rubik 11'
 v gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
+# Install Pacman-GUI
+echo -e "\e[36m[$0]: Installing Pacman-GUI...\e[0m"
+TMPDIR="$HOME/.hyprTmp/pacmangui"
+rm -rf "$TMPDIR"
+git clone https://github.com/ryzendew/Pacman-GUI.git "$TMPDIR"
+cd "$TMPDIR"
+mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+sudo make install
+cd "$base"
 
 #####################################################################################
 printf "\e[36m[$0]: 2. Copying + Configuring\e[0m\n"
