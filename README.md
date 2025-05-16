@@ -4,9 +4,16 @@
 </div>
 
 <div align="center"> 
-
+    
+## Floating Top panel + Dock called ags-floating-panel+dock in the .config
+    
 ![image](https://github.com/user-attachments/assets/399caa20-e686-4bb4-8839-798243bb408d)
 ![image](https://github.com/user-attachments/assets/98737d0c-b31d-4a1e-b575-8ce266db233f)
+
+## Flat top panel + Dock with Centered systemTray and stacked time + Weather is the main
+
+![image](https://github.com/user-attachments/assets/6b03f5bb-36ea-46e6-be96-ef3b5af37078)
+
 
 </a>
 
