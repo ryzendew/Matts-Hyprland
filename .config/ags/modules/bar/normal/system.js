@@ -44,18 +44,40 @@ const date = Variable('', {
 })
 
 export const BarClock = () => Widget.Box({
-    className: 'bar-group bar-group-standalone bar-clock-box bar-pill-large bar-group-pad-music',
+    className: 'bar-clock-box',
+    vertical: true, // Stack vertically
     hpack: 'center',
     vpack: 'center',
     children: [
+        // Time display on top
         Widget.Label({
-            className: 'txt-norm',
+            className: 'txt-smallie',
             label: Variable('', {
                 poll: [userOptions.time.interval, () => {
                     const t = GLib.DateTime.new_now_local();
-                    return `${t.format(userOptions.time.format)} • ${t.format(userOptions.time.dateFormatLong)}`;
+                    return t.format(userOptions.time.format);
                 }],
             }).bind(),
+        }),
+        // Date display on bottom
+        Widget.Label({
+            className: 'txt-mini',
+            label: Variable('', {
+                poll: [userOptions.time.dateInterval, () => {
+                    const t = GLib.DateTime.new_now_local();
+                    return t.format(userOptions.time.dateFormatLong);
+                }],
+            }).bind(),
+        }),
+    ],
+});
+
+export const ClockWeatherSeparator = () => Widget.Box({
+    className: 'clock-weather-separator',
+    children: [
+        Widget.Label({
+            label: ' • ',
+            className: 'txt-small',
         }),
     ],
 });
@@ -168,14 +190,14 @@ export default () => Widget.EventBox({
 });
 
 export const WeatherWidget = () => Widget.Box({
-    className: 'bar-group bar-group-standalone bar-weather-box bar-pill-large bar-group-pad-music',
+    className: 'bar-weather-box',
     hpack: 'center',
     vpack: 'center',
     children: [
         Widget.Label({
-            className: 'txt-norm',
+            className: 'txt-smallie',
             label: '',
-            setup: (self) => self.poll(900000, async () => {
+            setup: (self) => self.poll(120000, async () => {
                 const WEATHER_CACHE_PATH = WEATHER_CACHE_FOLDER + '/wttr.in.txt';
                 const updateWeatherForCity = (city) => execAsync(`curl https://wttr.in/${city.replace(/ /g, '%20')}?format=j1`)
                     .then(output => {

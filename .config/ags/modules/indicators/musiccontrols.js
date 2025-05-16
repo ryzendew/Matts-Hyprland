@@ -239,42 +239,41 @@ const CoverArt = ({ player, ...rest }) => {
     })
 }
 
-const TrackControls = ({ player, ...rest }) => Widget.Revealer({
-    revealChild: false,
-    transition: 'slide_right',
-    transitionDuration: userOptions.animations.durationLarge,
-    child: Widget.Box({
-        ...rest,
-        vpack: 'center',
-        className: 'osd-music-controls spacing-h-3',
-        children: [
-            Button({
-                className: 'osd-music-controlbtn',
-                onClicked: () => player.previous(),
-                child: Label({
-                    className: 'icon-material osd-music-controlbtn-txt',
-                    label: 'skip_previous',
-                }),
-                setup: setupCursorHover
+const TrackControls = ({ player, ...rest }) => Widget.Box({
+    ...rest,
+    vpack: 'center',
+    className: 'osd-music-controls-container spacing-h-5',
+    children: [
+        Button({
+            className: 'osd-music-controlbtn',
+            onClicked: () => player.previous(),
+            child: Label({
+                className: 'icon-material osd-music-controlbtn-txt',
+                label: 'skip_previous',
             }),
-            Button({
-                className: 'osd-music-controlbtn',
-                onClicked: () => player.next(),
-                child: Label({
-                    className: 'icon-material osd-music-controlbtn-txt',
-                    label: 'skip_next',
-                }),
-                setup: setupCursorHover
+            setup: setupCursorHover
+        }),
+        Button({
+            className: 'osd-music-controlbtn',
+            onClicked: () => player.playPause(),
+            child: Label({
+                className: 'icon-material osd-music-controlbtn-txt',
+                setup: (self) => self.hook(player, (label) => {
+                    label.label = `${player.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
+                }, 'notify::play-back-status'),
             }),
-        ],
-    }),
-    setup: (self) => self.hook(Mpris, (self) => {
-        // const player = Mpris.getPlayer();
-        if (!player)
-            self.revealChild = false;
-        else
-            self.revealChild = true;
-    }, 'notify::play-back-status'),
+            setup: setupCursorHover
+        }),
+        Button({
+            className: 'osd-music-controlbtn',
+            onClicked: () => player.next(),
+            child: Label({
+                className: 'icon-material osd-music-controlbtn-txt',
+                label: 'skip_next',
+            }),
+            setup: setupCursorHover
+        }),
+    ],
 });
 
 const TrackSource = ({ player, ...rest }) => Widget.Revealer({
@@ -339,33 +338,6 @@ const TrackTime = ({ player, ...rest }) => {
     })
 }
 
-const PlayState = ({ player }) => {
-    var position = 0;
-    const trackCircProg = TrackProgress({ player: player });
-    return Widget.Button({
-        className: 'osd-music-playstate',
-        child: Widget.Overlay({
-            child: trackCircProg,
-            overlays: [
-                Widget.Button({
-                    className: 'osd-music-playstate-btn',
-                    onClicked: () => player.playPause(),
-                    child: Widget.Label({
-                        justification: 'center',
-                        hpack: 'fill',
-                        vpack: 'center',
-                        setup: (self) => self.hook(player, (label) => {
-                            label.label = `${player.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
-                        }, 'notify::play-back-status'),
-                    }),
-                    setup: setupCursorHover
-                }),
-            ],
-            passThrough: true,
-        }),
-    });
-}
-
 const MusicControlsWidget = (player) => Box({
     className: 'osd-music spacing-h-20 test',
     children: [
@@ -388,7 +360,6 @@ const MusicControlsWidget = (player) => Box({
                     className: 'spacing-h-10',
                     setup: (box) => {
                         box.pack_start(TrackControls({ player: player }), false, false, 0);
-                        box.pack_end(PlayState({ player: player }), false, false, 0);
                         if(hasPlasmaIntegration || player.busName.startsWith('org.mpris.MediaPlayer2.chromium')) box.pack_end(TrackTime({ player: player }), false, false, 0)
                         // box.pack_end(TrackSource({ vpack: 'center', player: player }), false, false, 0);
                     }

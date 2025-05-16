@@ -32,5 +32,8 @@
     },
     "time": {
         "format": "%I:%M %p"
+    },
+    "dock": {
+        "hiddenThickness": 15
     }
 }

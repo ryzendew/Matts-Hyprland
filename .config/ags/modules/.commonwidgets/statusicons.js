@@ -301,7 +301,8 @@ const optionalKeyboardLayoutInstances = await createKeyboardLayoutInstances()
 export const StatusIcons = (props = {}, monitor = 0) => Widget.Box({
     ...props,
     child: Widget.Box({
-        className: 'spacing-h-15',
+        className: 'spacing-h-5 bar-statusicons-container',
+        css: 'padding: 2px 8px; margin: 2px 6px;',
         children: [
             MicMuteIndicator(),
             optionalKeyboardLayoutInstances[monitor],

@@ -35,7 +35,6 @@ const SeparatorDot = () => Widget.Revealer({
 export default (monitor = 0) => {
     const barTray = Tray();
     const barStatusIcons = StatusIcons({
-        className: 'bar-statusicons',
         setup: (self) => self.hook(App, (self, currentName, visible) => {
             if (currentName === 'sideright') {
                 self.toggleClassName('bar-statusicons-active', visible);

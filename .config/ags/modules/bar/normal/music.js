@@ -120,35 +120,45 @@ const switchToRelativeWorkspace = async (self, num) => {
 
 
 export default () => {
-    // TODO: use cairo to make button bounce smaller on click, if that's possible
-    const playingState = Box({ // Wrap a box cuz overlay can't have margins itself
-        homogeneous: true,
-        children: [Overlay({
-            child: Box({
-                vpack: 'center',
-                className: 'bar-music-playstate',
-                homogeneous: true,
-                children: [Label({
-                    vpack: 'center',
-                    className: 'bar-music-playstate-txt',
-                    justification: 'center',
-                    setup: (self) => self.hook(Mpris, label => {
-                        const mpris = Mpris.getPlayer('');
-                        label.label = `${mpris !== null && mpris.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
-                    }),
-                })],
-                setup: (self) => self.hook(Mpris, label => {
-                    const mpris = Mpris.getPlayer('');
-                    if (!mpris) return;
-                    label.toggleClassName('bar-music-playstate-playing', mpris !== null && mpris.playBackStatus == 'Playing');
-                    label.toggleClassName('bar-music-playstate', mpris !== null || mpris.playBackStatus == 'Paused');
-                }),
-            }),
-            overlays: [
-                TrackProgress(),
-            ]
-        })]
+    // Create previous track button with consistent styling
+    const prevButton = Button({
+        className: 'bar-music-button',
+        child: MaterialIcon('skip_previous', 'default'),
+        onClicked: () => execAsync('playerctl previous').catch(print),
+        tooltipText: 'Previous Track',
     });
+    
+    // Create play/pause button with consistent styling
+    const playButton = Button({
+        className: 'bar-music-button',
+        child: Label({
+            className: 'icon-material',
+            setup: (self) => self.hook(Mpris, label => {
+                const mpris = Mpris.getPlayer('');
+                label.label = `${mpris !== null && mpris.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
+            }),
+        }),
+        onClicked: () => execAsync('playerctl play-pause').catch(print),
+    });
+    
+    // Create next track button with consistent styling 
+    const nextButton = Button({
+        className: 'bar-music-button',
+        child: MaterialIcon('skip_next', 'default'),
+        onClicked: () => execAsync('playerctl next').catch(print),
+        tooltipText: 'Next Track',
+    });
+    
+    // Create a container for all music control buttons
+    const musicControls = Box({
+        className: 'bar-music-controls',
+        children: [
+            prevButton,
+            playButton,
+            nextButton,
+        ]
+    });
+    
     const trackTitle = Label({
         hexpand: true,
         className: 'txt-smallie bar-music-txt',
@@ -159,15 +169,17 @@ export default () => {
             else
                 label.label = getString('No media');
         }),
-    })
+    });
+    
     const musicStuff = Box({
-        className: 'spacing-h-10',
+        className: 'spacing-h-5',
         hexpand: true,
         children: [
-            playingState,
+            musicControls,
             trackTitle,
         ]
-    })
+    });
+    
     return EventBox({
         onScrollUp: () => adjustVolume('up'),
         onScrollDown: () => adjustVolume('down'),
@@ -175,7 +187,11 @@ export default () => {
             className: 'spacing-h-4',
             children: [
                 EventBox({
-                    child: BarGroup({ child: musicStuff }),
+                    child: Box({
+                        className: 'bar-music-container spacing-h-5',
+                        css: 'padding: 2px 8px; margin: 2px 6px;',
+                        children: [musicStuff]
+                    }),
                     onPrimaryClick: () => showMusicControls.setValue(!showMusicControls.value),
                     onSecondaryClick: () => execAsync(['bash', '-c', 'playerctl next || playerctl position `bc <<< "100 * $(playerctl metadata mpris:length) / 1000000 / 100"` &']).catch(print),
                     onMiddleClick: () => execAsync('playerctl play-pause').catch(print),

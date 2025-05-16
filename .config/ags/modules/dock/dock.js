@@ -334,7 +334,7 @@ const Taskbar = (monitor) => Widget.Box({
 
 export default (monitor = 0) => {
     const dockContent = Box({
-        className: 'dock-bg spacing-h-5',
+        className: 'dock-bg spacing-h-7',
         children: [
             ArchMenuButton(),
             PinnedApps(),
@@ -376,7 +376,7 @@ export default (monitor = 0) => {
     })
     return Box({
         homogeneous: true,
-        css: `min-height: ${userOptions.dock.hiddenThickness}px;`,
+        css: `min-height: ${userOptions.dock.hiddenThickness}px; margin-bottom: 1px;`,
         children: [dockRevealer],
     })
 }

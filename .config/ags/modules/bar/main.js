@@ -4,12 +4,13 @@ import Battery from 'resource:///com/github/Aylur/ags/service/battery.js';
 
 import WindowTitle from "./normal/spaceleft.js";
 import Indicators from "./normal/spaceright.js";
+import CenterTray from "./normal/spacecenter.js";
 import Music from "./normal/music.js";
 import System from "./normal/system.js";
 import { enableClickthrough } from "../.widgetutils/clickthrough.js";
 import { RoundedCorner } from "../.commonwidgets/cairo_roundedcorner.js";
 import { currentShellMode } from '../../variables.js';
-import { BarClock, WeatherWidget } from "./normal/system.js";
+import { BarClock, WeatherWidget, ClockWeatherSeparator } from "./normal/system.js";
 import { setupCursorHover } from "../.widgetutils/cursorhover.js";
 
 const NormalOptionalWorkspaces = async () => {
@@ -62,6 +63,7 @@ export const Bar = async (monitor = 0) => {
     });
     const normalBarContent = Widget.CenterBox({
         className: 'bar-bg',
+        css: 'margin: 0px; padding: 0px;',
         setup: (self) => {
             const styleContext = self.get_style_context();
             const minHeight = styleContext.get_property('min-height', Gtk.StateFlags.NORMAL);
@@ -69,23 +71,42 @@ export const Bar = async (monitor = 0) => {
         },
         startWidget: Widget.Box({
             children: [ArchRofiButton()],
+            margin: 0,
         }),
         centerWidget: Widget.Box({
             className: 'spacing-h-4',
+            hexpand: true,
             children: [
-                // Removed Music and System from here
-            ]
+                CenterTray(monitor),
+            ],
+            margin: 0,
         }),
         endWidget: Widget.Box({
             className: 'spacing-h-4',
             children: [
-                Indicators(monitor),
-                WeatherWidget(),
                 Widget.Box({
-                    className: 'bar-clock-margin',
-                    children: [BarClock()],
+                    hexpand: true,
+                    vexpand: false,
+                    visible: true,
+                    sensitive: false,
+                    css: 'min-width: 150px; opacity: 0;',
                 }),
-            ]
+                Widget.Box({
+                    className: 'bar-clock-weather-container spacing-h-5',
+                    css: 'padding: 2px 6px; margin: 0px 6px;',
+                    children: [
+                        WeatherWidget(),
+                        ClockWeatherSeparator(),
+                        BarClock(),
+                    ],
+                }),
+                Widget.Box({
+                    hexpand: false,
+                    vexpand: false,
+                    css: 'min-width: 4px;',
+                }),
+            ],
+            margin: 0,
         }),
     });
     const focusedBarContent = Widget.CenterBox({
