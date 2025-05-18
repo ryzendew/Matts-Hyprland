@@ -37,7 +37,10 @@
 
   
    - **Custom logo**, make a logo folder in Pictures and name the logo you want to Arch-linux-logo.png:
-   - **Prerequisite**: Your system works. That's it. You don't have to reinstall your system!
+   - **Prerequisite**:
+     ```
+     yay -S adw-gtk-theme-git qt6ct qt5-wayland ttf-readex-pro ttf-jetbrains-mono-nerd ttf-material-symbols-variable-git ttf-space-mono-nerd ttf-rubik-vf ttf-gabarito-git foot starship kvantum-qt5
+     ```
    - **Automatic**, but guided and transparent, installation for Arch(-based) Linux:
    ```bash
    bash <(curl -s "https://raw.githubusercontent.com/ryzendew/Matts-Hyprland/refs/heads/main/install.sh")
