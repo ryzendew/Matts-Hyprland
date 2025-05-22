@@ -23,4 +23,3 @@ alias pamcan=pacman
 #   set_color cyan; echo (pwd)
 #   set_color green; echo '> '
 # end
-set -x PATH $PATH /usr/local/zig

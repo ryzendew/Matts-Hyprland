@@ -21,7 +21,6 @@ import Overview from './modules/overview/main.js';
 import Session from './modules/session/main.js';
 import SideLeft from './modules/sideleft/main.js';
 import SideRight from './modules/sideright/main.js';
-import { NotificationsWindow } from './modules/onscreendisplay.js';
 import { COMPILED_STYLE_DIR } from './init.js';
 
 const range = (length, start = 1) => Array.from({ length }, (_, i) => i + start);
@@ -40,37 +39,33 @@ startAutoDarkModeService().catch(print);
 firstRunWelcome().catch(print);
 startBatteryWarningService().catch(print)
 
-// Function to only apply widget to specific monitor
-function forMainMonitor(widget) {
-    // Only apply to monitor 0 (DP-1)
-    return [widget(0)].flat(1);
-}
-
-const Windows = () => [
-    // forMonitors(DesktopBackground),
-    forMonitors(Crosshair),
-    Overview(),
-    forMonitors(Indicator),
-    forMainMonitor(NotificationsWindow),
-    forMonitors(Cheatsheet),
-    SideLeft(),
-    SideRight(),
-    forMonitors(Osk),
-    forMonitors(Session),
-    // Only show dock on main monitor (DP-1)
-    ...(userOptions.dock.enabled ? [forMainMonitor(Dock)] : []),
-    ...(userOptions.appearance.fakeScreenRounding !== 0 ? [
-        //forMonitors((id) => Corner(id, 'top left', true)),
-        //forMonitors((id) => Corner(id, 'top right', true)),
-        //forMonitors((id) => Corner(id, 'bottom left', true)),
-        //forMonitors((id) => Corner(id, 'bottom right', true)),
-    ] : []),
-    // Bar corners are not needed with edge-to-edge design
-    // ...(userOptions.appearance.barRoundCorners ? [
-    //     forMonitors(BarCornerTopleft),
-    //     forMonitors(BarCornerTopright),
-    // ] : []),
-];
+const Windows = async () => {
+    const barModule = await import('./modules/bar/main.js');
+    const dockModule = await import('./modules/dock/main.js');
+    
+    return [
+        forMonitors(Crosshair),
+        Overview(),
+        forMonitors(Indicator),
+        forMonitors(Cheatsheet),
+        SideLeft(),
+        SideRight(),
+        forMonitors(Osk),
+        forMonitors(Session),
+        ...(userOptions.dock.enabled ? [dockModule.default(0)] : []),
+        ...(userOptions.appearance.fakeScreenRounding !== 0 ? [
+            forMonitors((id) => Corner(id, 'top left', true)),
+            forMonitors((id) => Corner(id, 'top right', true)),
+            forMonitors((id) => Corner(id, 'bottom left', true)),
+            forMonitors((id) => Corner(id, 'bottom right', true)),
+        ] : []),
+        ...(userOptions.appearance.barRoundCorners ? [
+            forMonitors(BarCornerTopleft),
+            forMonitors(BarCornerTopright),
+        ] : []),
+        await barModule.Bar(0),
+    ];
+};
 
 const CLOSE_ANIM_TIME = 210; // Longer than actual anim time to make sure widgets animate fully
 const closeWindowDelays = {}; // For animations
@@ -78,16 +73,14 @@ for (let i = 0; i < (Gdk.Display.get_default()?.get_n_monitors() || 1); i++) {
     closeWindowDelays[`osk${i}`] = CLOSE_ANIM_TIME;
 }
 
-App.config({
-    css: `${COMPILED_STYLE_DIR}/style.css`,
-    stackTraceOnError: true,
-    closeWindowDelay: closeWindowDelays,
-    windows: Windows().flat(1),
+Windows().then(windows => {
+    App.config({
+        css: `${COMPILED_STYLE_DIR}/style.css`,
+        stackTraceOnError: true,
+        closeWindowDelay: closeWindowDelays,
+        windows: windows.flat(1),
+    });
 });
 
-// Only show bar on main monitor (DP-1)
-Bar(0).catch(print);
-// Commented out the multi-monitor bar call
-// forMonitorsAsync(Bar);
-// Bar().catch(print); // Use this to debug the bar. Single monitor only.
+// Stuff that don't need to be toggled. And they're async so ugh...
 

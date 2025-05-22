@@ -18,22 +18,37 @@
     "sidebar": {
         "pages": {
             "apis": {
-                "defaultPage": "booru"
+                "defaultPage": "waifu"
             },
             "defaultPage": "tools"
         }
     },
-    "appearance": {
-        "barRoundCorners": false
-    },
-    "weather": {
-        "city": "Halifax, Nova Scotia",
-        "preferredUnit": "C"
-    },
-    "time": {
-        "format": "%I:%M %p"
-    },
     "dock": {
-        "hiddenThickness": 15
+        "enabled": true,
+        "layer": "bottom",
+        "hiddenThickness": 0,
+        "iconSize": 32,
+        "pinnedApps": [
+            "microsoft-edge-dev",
+            "org.gnome.Nautilus",
+            "vesktop",
+            "cider",
+            "steam-native",
+            "lutris",
+            "heroic",
+            "obs",
+            "com.blackmagicdesign.resolve.desktop",
+            "ptyxis"
+        ],
+        "autoHide": []
+    },
+    "appearance": {
+        "barRoundCorners": 0,
+        "fakeScreenRounding": 0,
+        "colorScheme": {
+            "enabled": true,
+            "generateFromWallpaper": true,
+            "useSystemScheme": false
+        }
     }
 }

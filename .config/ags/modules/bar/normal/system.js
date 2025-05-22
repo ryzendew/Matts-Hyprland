@@ -7,11 +7,7 @@ const { GLib } = imports.gi;
 import Battery from 'resource:///com/github/Aylur/ags/service/battery.js';
 import { MaterialIcon } from '../../.commonwidgets/materialicon.js';
 import { AnimatedCircProg } from "../../.commonwidgets/cairo_circularprogress.js";
-import { WWO_CODE, WEATHER_SYMBOL, NIGHT_WEATHER_SYMBOL } from '../../.commondata/weather.js';
 import { setupCursorHover } from '../../.widgetutils/cursorhover.js';
-
-const WEATHER_CACHE_FOLDER = `${GLib.get_user_cache_dir()}/ags/weather`;
-Utils.exec(`mkdir -p ${WEATHER_CACHE_FOLDER}`);
 
 const BarBatteryProgress = () => {
     const _updateProgress = (circprog) => { // Set circular progress value
@@ -29,59 +25,6 @@ const BarBatteryProgress = () => {
     })
 }
 
-const time = Variable('', {
-    poll: [
-        userOptions.time.interval,
-        () => GLib.DateTime.new_now_local().format(userOptions.time.format),
-    ],
-})
-
-const date = Variable('', {
-    poll: [
-        userOptions.time.dateInterval,
-        () => GLib.DateTime.new_now_local().format(userOptions.time.dateFormatLong),
-    ],
-})
-
-export const BarClock = () => Widget.Box({
-    className: 'bar-clock-box',
-    vertical: true, // Stack vertically
-    hpack: 'center',
-    vpack: 'center',
-    children: [
-        // Time display on top
-        Widget.Label({
-            className: 'txt-smallie',
-            label: Variable('', {
-                poll: [userOptions.time.interval, () => {
-                    const t = GLib.DateTime.new_now_local();
-                    return t.format(userOptions.time.format);
-                }],
-            }).bind(),
-        }),
-        // Date display on bottom
-        Widget.Label({
-            className: 'txt-mini',
-            label: Variable('', {
-                poll: [userOptions.time.dateInterval, () => {
-                    const t = GLib.DateTime.new_now_local();
-                    return t.format(userOptions.time.dateFormatLong);
-                }],
-            }).bind(),
-        }),
-    ],
-});
-
-export const ClockWeatherSeparator = () => Widget.Box({
-    className: 'clock-weather-separator',
-    children: [
-        Widget.Label({
-            label: ' • ',
-            className: 'txt-small',
-        }),
-    ],
-});
-
 const UtilButton = ({ name, icon, onClicked }) => Button({
     vpack: 'center',
     tooltipText: name,
@@ -95,7 +38,22 @@ const Utilities = () => Box({
     hpack: 'center',
     className: 'spacing-h-4',
     children: [
-        // All utility buttons removed as requested
+        UtilButton({
+            name: getString('Screen snip'), icon: 'screenshot_region', onClicked: () => {
+                Utils.execAsync(`${App.configDir}/scripts/grimblast.sh copy area`)
+                    .catch(print)
+            }
+        }),
+        UtilButton({
+            name: getString('Color picker'), icon: 'colorize', onClicked: () => {
+                Utils.execAsync(['hyprpicker', '-a']).catch(print)
+            }
+        }),
+        UtilButton({
+            name: getString('Toggle on-screen keyboard'), icon: 'keyboard', onClicked: () => {
+                toggleWindowOnAllMonitors('osk');
+            }
+        }),
     ]
 })
 
@@ -146,6 +104,7 @@ const BarGroup = ({ child }) => Widget.Box({
         }),
     ]
 });
+
 const BatteryModule = () => Stack({
     transition: 'slide_up_down',
     transitionDuration: userOptions.animations.durationLarge,
@@ -156,11 +115,7 @@ const BatteryModule = () => Stack({
                 BarGroup({ child: BarBattery() }),
             ]
         }),
-        'desktop': Box({
-            className: 'spacing-h-4', children: [
-                // No pillbox or utilities for desktop
-            ]
-        }),
+        'desktop': Box({ className: 'spacing-h-4' }),
     },
     setup: (stack) => Utils.timeout(10, () => {
         if (!Battery.available) stack.shown = 'desktop';
@@ -187,58 +142,4 @@ export default () => Widget.EventBox({
             BatteryModule(),
         ]
     })
-});
-
-export const WeatherWidget = () => Widget.Box({
-    className: 'bar-weather-box',
-    hpack: 'center',
-    vpack: 'center',
-    children: [
-        Widget.Label({
-            className: 'txt-smallie',
-            label: '',
-            setup: (self) => self.poll(120000, async () => {
-                const WEATHER_CACHE_PATH = WEATHER_CACHE_FOLDER + '/wttr.in.txt';
-                const updateWeatherForCity = (city) => execAsync(`curl https://wttr.in/${city.replace(/ /g, '%20')}?format=j1`)
-                    .then(output => {
-                        const weather = JSON.parse(output);
-                        Utils.writeFile(JSON.stringify(weather), WEATHER_CACHE_PATH)
-                            .catch(print);
-                        const weatherCode = weather.current_condition[0].weatherCode;
-                        const weatherDesc = weather.current_condition[0].weatherDesc[0].value;
-                        const temperature = weather.current_condition[0][`temp_${userOptions.weather.preferredUnit}`];
-                        const feelsLike = weather.current_condition[0][`FeelsLike${userOptions.weather.preferredUnit}`];
-                        const weatherSymbol = WEATHER_SYMBOL[WWO_CODE[weatherCode]];
-                        self.label = `${weatherSymbol} ${temperature}°${userOptions.weather.preferredUnit} • Feels like ${feelsLike}°${userOptions.weather.preferredUnit}`;
-                        self.tooltipText = weatherDesc;
-                    }).catch((err) => {
-                        try {
-                            const weather = JSON.parse(
-                                Utils.readFile(WEATHER_CACHE_PATH)
-                            );
-                            const weatherCode = weather.current_condition[0].weatherCode;
-                            const weatherDesc = weather.current_condition[0].weatherDesc[0].value;
-                            const temperature = weather.current_condition[0][`temp_${userOptions.weather.preferredUnit}`];
-                            const feelsLike = weather.current_condition[0][`FeelsLike${userOptions.weather.preferredUnit}`];
-                            const weatherSymbol = WEATHER_SYMBOL[WWO_CODE[weatherCode]];
-                            self.label = `${weatherSymbol} ${temperature}°${userOptions.weather.preferredUnit} • Feels like ${feelsLike}°${userOptions.weather.preferredUnit}`;
-                            self.tooltipText = weatherDesc;
-                        } catch (err) {
-                            print(err);
-                        }
-                    });
-                if (userOptions.weather.city != '' && userOptions.weather.city != null) {
-                    updateWeatherForCity(userOptions.weather.city.replace(/ /g, '%20'));
-                }
-                else {
-                    Utils.execAsync('curl ipinfo.io')
-                        .then(output => {
-                            return JSON.parse(output)['city'].toLowerCase();
-                        })
-                        .then(updateWeatherForCity)
-                        .catch(print)
-                }
-            })
-        }),
-    ],
 });

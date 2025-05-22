@@ -9,31 +9,18 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-height {
-    min-height: 1.85rem;
-    margin: 0;
+    min-height: 2.727rem;
 }
 
 .bar-bg {
     background-color: $layer0;
-    min-height: 1.85rem;
-    border-radius: 0;
-    margin: 0;
-    border: 2px solid rgba(0, 0, 0, 0.5);
-    border-width: 0 0 2px 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    min-height: 2.727rem;
+    border-bottom: 2px solid black;
 }
 
 .bar-bg-focus {
     background-color: $layer0;
-    min-height: 0.8rem;
-    border-radius: 0;
-    margin: 0;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-    border: 4px solid rgba(0, 0, 0, 0.5);
-    border-width: 0 0 4px 0;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2),
-                0 0 20px rgba(0, 0, 0, 0.1),
-                0 0 30px rgba(0, 0, 0, 0.05);
+    min-height: 1.364rem;
 }
 
 .bar-bg-nothing {
@@ -50,14 +37,11 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-group-margin {
-    padding: 0rem 0rem;
+    padding: 0.273rem 0rem;
 }
 
 .bar-group {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    background-color: $layer1;
 }
 
 .bar-group-borderless {
@@ -65,7 +49,7 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-group-pad {
-    padding: 0.1rem;
+    padding: 0.205rem;
 }
 
 .bar-group-pad-less {
@@ -73,7 +57,7 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-group-pad-system {
-    padding: 0rem 0.2rem;
+    padding: 0rem 0.341rem;
 }
 
 .bar-group-pad-music {
@@ -82,30 +66,32 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-group-standalone {
-    border-radius: 0;
-    -gtk-outline-radius: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1),
-                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    @include bar-group-rounding;
+    -gtk-outline-radius: 1.364rem;
 }
 
 .bar-group-round {
-    border-radius: 0;
-    -gtk-outline-radius: 0;
+    border-radius: 10rem;
+    -gtk-outline-radius: 10rem;
 }
 
 .bar-group-middle {
-    border-radius: 0;
-    -gtk-outline-radius: 0;
+    border-radius: 0.477rem;
+    -gtk-outline-radius: 0.477rem;
 }
 
 .bar-group-left {
-    border-radius: 0;
-    -gtk-outline-radius: 0;
+    border-radius: 0.477rem;
+    -gtk-outline-radius: 0.477rem;
+    border-top-left-radius: 1.364rem;
+    border-bottom-left-radius: 1.364rem;
 }
 
 .bar-group-right {
-    border-radius: 0;
-    -gtk-outline-radius: 0;
+    border-radius: 0.477rem;
+    -gtk-outline-radius: 0.477rem;
+    border-top-right-radius: 1.364rem;
+    border-bottom-right-radius: 1.364rem;
 }
 
 .bar-sidemodule {
@@ -129,15 +115,13 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-ws-active {
-    background-color: mix($workspaceLayer3, black, 90%);
+    background-color: $workspaceLayer3;
     color: $workspaceOnLayer3;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .bar-ws-occupied {
-    background-color: mix($layer2, black, 90%);
+    background-color: $layer2;
     color: $workspaceOnLayer2;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 // Focus is the bar mode name, not the workspace state!
@@ -156,24 +140,8 @@ $bar_ws_width_focus_active: 2.045rem;
     background-color: $secondaryContainer;
 }
 
-.bar-clock-weather-container {
-    @include full-rounding;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 10rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    padding: 2px 6px;
-    margin: 0px 6px;
-}
-
-.clock-weather-separator {
-    margin: 0 2px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
 .bar-clock-box {
-    margin-top: 2px;
-    margin-bottom: 2px;
-    font-weight: 500;
+    margin: 0rem 2.5rem 0rem 0.682rem;
 }
 
 .bar-time {
@@ -189,8 +157,8 @@ $bar_ws_width_focus_active: 2.045rem;
 .bar-batt {
     @include full-rounding;
     @include element_decel;
-    min-height: 1rem;
-    min-width: 1rem;
+    min-height: 1.77rem;
+    min-width: 1.77rem;
     border-radius: 10rem;
     color: $battOnLayer2;
 }
@@ -201,8 +169,8 @@ $bar_ws_width_focus_active: 2.045rem;
 
 .bar-batt-circprog {
     @include fluent_decel_long;
-    min-width: 0.136rem;
-    min-height: 0.9rem;
+    min-width: 0.136rem; // line width
+    min-height: 1.636rem;
     padding: 0rem;
     background-color: $battLayer2;
     color: $battOnLayer2;
@@ -226,16 +194,16 @@ $bar_ws_width_focus_active: 2.045rem;
 .bar-ram-icon {
     @include full-rounding;
     @include element_decel;
-    min-height: 1rem;
-    min-width: 1rem;
+    min-height: 1.77rem;
+    min-width: 1.77rem;
     border-radius: 10rem;
     color: $ramOnLayer2;
 }
 
 .bar-ram-circprog {
     @include fluent_decel_long;
-    min-width: 0.136rem;
-    min-height: 0.9rem;
+    min-width: 0.136rem; // line width
+    min-height: 1.636rem;
     padding: 0rem;
     background-color: $ramLayer2;
     color: $ramOnLayer2;
@@ -252,16 +220,16 @@ $bar_ws_width_focus_active: 2.045rem;
 .bar-swap-icon {
     @include full-rounding;
     @include element_decel;
-    min-height: 1rem;
-    min-width: 1rem;
+    min-height: 1.77rem;
+    min-width: 1.77rem;
     border-radius: 10rem;
     color: $swapOnLayer2;
 }
 
 .bar-swap-circprog {
     @include fluent_decel_long;
-    min-width: 0.136rem;
-    min-height: 0.9rem;
+    min-width: 0.136rem; // line width
+    min-height: 1.636rem;
     padding: 0rem;
     background-color: $swapLayer2;
     color: $swapOnLayer2;
@@ -278,16 +246,16 @@ $bar_ws_width_focus_active: 2.045rem;
 .bar-cpu-icon {
     @include full-rounding;
     @include element_decel;
-    min-height: 1rem;
-    min-width: 1rem;
+    min-height: 1.77rem;
+    min-width: 1.77rem;
     border-radius: 10rem;
     color: $cpuOnLayer2;
 }
 
 .bar-cpu-circprog {
     @include fluent_decel_long;
-    min-width: 0.136rem;
-    min-height: 0.9rem;
+    min-width: 0.136rem; // line width
+    min-height: 1.636rem;
     padding: 0rem;
     background-color: $cpuLayer2;
     color: $cpuOnLayer2;
@@ -303,16 +271,16 @@ $bar_ws_width_focus_active: 2.045rem;
 
 .bar-music-playstate {
     @include element_decel;
-    min-height: 1rem;
-    min-width: 1rem;
+    min-height: 1.77rem;
+    min-width: 1.77rem;
     border-radius: 10rem;
     color: $musicOnLayer2;
 }
 
 .bar-music-circprog {
     @include fluent_decel_long;
-    min-width: 0.136rem;
-    min-height: 0.9rem;
+    min-width: 0.136rem; // line width
+    min-height: 1.636rem;
     padding: 0rem;
     background-color: $musicLayer2;
     color: $musicOnLayer2;
@@ -323,8 +291,8 @@ $bar_ws_width_focus_active: 2.045rem;
 }
 
 .bar-music-playstate-playing {
-    min-height: 1rem;
-    min-width: 1rem;
+    min-height: 1.77rem;
+    min-width: 1.77rem;
     border-radius: 10rem;
     color: $musicOnLayer2;
 }
@@ -369,12 +337,12 @@ $bar_ws_width_focus_active: 2.045rem;
 
 .corner {
     background-color: $layer0;
-    border-radius: 0;
+    @include large-rounding;
 }
 
 .corner-black {
     background-color: $black; // Hard code: fake screen corner
-    border-radius: 0;
+    @include large-rounding;
 }
 
 .bar-wintitle-topdesc {
@@ -410,56 +378,37 @@ $bar_ws_width_focus_active: 2.045rem;
     @include full-rounding;
     margin: 0.137rem 0rem;
     padding: 0rem 0.682rem;
-    background-color: rgba(0, 0, 0, 0.2);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.bar-systray-container {
-    @include full-rounding;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 10rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    padding-top: 0.75px;
-    padding-bottom: 0.75px;
 }
 
 .bar-systray-item {
     @include full-rounding;
     @include element_decel;
     @include symbolic-icon;
-    min-height: 1.5rem;
-    min-width: 1.5rem;
-    font-size: 1.5rem;
+    min-height: 1.032rem;
+    min-width: 1.032rem;
+    font-size: 1.032rem;
     color: $trayOnLayer0;
 }
 
-.bar-statusicons-container {
-    @include full-rounding;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 10rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    padding-top: 0.75px;
-    padding-bottom: 0.75px;
-}
-
 .bar-statusicons {
+    @include full-rounding;
     @include element_decel;
+    margin: 0.273rem;
+    padding: 0rem 0.614rem;
 }
 
 .bar-statusicons-active {
-    background-color: mix($layer0Active, black, 90%);
+    background-color: $layer0Active;
     color: $onLayer0Active;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .bar-util-btn {
     @include full-rounding;
     @include element_decel;
-    min-height: 1rem;
-    min-width: 1rem;
-    background-color: mix($utilsLayer2, black, 90%);
+    min-height: 1.77rem;
+    min-width: 1.77rem;
+    background-color: $utilsLayer2;
     color: $utilsOnLayer2;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .bar-util-btn-borderless {
@@ -479,43 +428,15 @@ $bar_ws_width_focus_active: 2.045rem;
     color: $barspacerightOnLayer0;
 }
 
-.bar-spacecenter {
-    color: $barspacerightOnLayer0;
-}
-
 .bar-bluetooth-device {
     @include full-rounding;
     @include symbolic-icon;
-    min-height: 0.8rem;
-    min-width: 0.8rem;
-    font-size: 0.8rem;
-    padding: 0.1rem 0.2rem;
+    min-height: 1.032rem;
+    min-width: 1.032rem;
+    font-size: 1.032rem;
+    padding: 0.205rem 0.341rem;
 }
 
-.bar-music-container {
-    @include full-rounding;
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 10rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    padding-top: 0.75px;
-    padding-bottom: 0.75px;
-}
-
-// Add styles for music control buttons
-.bar-music-control-btn {
-    @include full-rounding;
-    @include element_decel;
-    min-height: 1.3rem;
-    min-width: 1.3rem;
-    padding: 0.15rem;
-    color: $musicOnLayer2;
-    background-color: transparentize($musicLayer2, 0.5);
-}
-
-.bar-music-control-btn:hover {
-    background-color: transparentize($musicLayer2, 0.3);
-}
-
-.bar-music-control-btn:active {
-    background-color: $musicLayer2;
+.margin-right-40 {
+    margin-right: 4rem;
 }

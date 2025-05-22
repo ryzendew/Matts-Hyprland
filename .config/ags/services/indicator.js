@@ -11,39 +11,16 @@ class IndicatorService extends Service {
 
     _delay = 1500;
     _count = 0;
-    _hideTimer = null;
 
     popup(value) {
         this.emit('popup', value);
-        
-        // If we're showing the indicator
-        if (value > -1) {
-            this._count++;
-            
-            // Clear any existing hide timer
-            if (this._hideTimer) {
-                Utils.timeout.clearTimeout(this._hideTimer);
-                this._hideTimer = null;
-            }
-            
-            // Set a new hide timer
-            this._hideTimer = Utils.timeout(this._delay, () => {
-                this._count--;
-                
-                if (this._count === 0) {
-                    this.emit('popup', -1);
-                    this._hideTimer = null;
-                }
-            });
-        } 
-        // Force hiding if explicitly requested
-        else if (value === -1) {
-            this._count = 0;
-            if (this._hideTimer) {
-                Utils.timeout.clearTimeout(this._hideTimer);
-                this._hideTimer = null;
-            }
-        }
+        this._count++;
+        Utils.timeout(this._delay, () => {
+            this._count--;
+
+            if (this._count === 0)
+                this.emit('popup', -1);
+        });
     }
 
     connectWidget(widget, callback) {

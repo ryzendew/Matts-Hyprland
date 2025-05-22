@@ -15,8 +15,7 @@ const SysTrayItem = (item) => item.id !== null ? Button({
 
 export const Tray = (props = {}) => {
     const trayContent = Box({
-        className: 'margin-right-5 spacing-h-5 bar-systray-container',
-        css: 'padding: 2px 8px; margin: 2px 6px;',
+        className: 'margin-right-5 spacing-h-15',
         setup: (self) => self
             .hook(SystemTray, (self) => {
                 self.children = SystemTray.items.map(SysTrayItem);

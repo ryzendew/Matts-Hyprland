@@ -1,6 +1,7 @@
 const { Gdk, GLib } = imports.gi;
 import Service from 'resource:///com/github/Aylur/ags/service.js';
 import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
+import ColorScheme from './colorscheme.js';
 
 const WALLPAPER_CONFIG_PATH = `${GLib.get_user_state_dir()}/ags/user/wallpaper.json`;
 
@@ -21,13 +22,16 @@ class WallpaperService extends Service {
             .catch(print);
     }
 
-    add(path) {
+    async add(path) {
         this._wallJson.push(path);
         this._save();
+        if (userOptions.appearance.colorScheme.generateFromWallpaper) {
+            await ColorScheme.generateFromWallpaper(path);
+        }
         this.emit('updated');
     }
 
-    set(path, monitor = -1) {
+    async set(path, monitor = -1) {
         this._monitorCount = Gdk.Display.get_default()?.get_n_monitors() || 1;
         if (this._wallJson.length < this._monitorCount) this._wallJson[this._monitorCount - 1] = "";
         if (monitor == -1)
@@ -36,6 +40,9 @@ class WallpaperService extends Service {
             this._wallJson[monitor] = path;
 
         this._save();
+        if (userOptions.appearance.colorScheme.generateFromWallpaper) {
+            await ColorScheme.generateFromWallpaper(path);
+        }
         this.emit('updated');
     }
 
@@ -52,6 +59,10 @@ class WallpaperService extends Service {
         try {
             const fileContents = Utils.readFile(this._wallPath);
             this._wallJson = JSON.parse(fileContents);
+            // Generate colors from current wallpaper if enabled
+            if (userOptions.appearance.colorScheme.generateFromWallpaper && this._wallJson.length > 0) {
+                ColorScheme.generateFromWallpaper(this._wallJson[0]).catch(print);
+            }
         }
         catch {
             Utils.exec(`bash -c 'mkdir -p ${GLib.get_user_cache_dir()}/ags/user'`);

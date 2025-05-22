@@ -43,13 +43,13 @@
         "layerSmoke": false,
         "layerSmokeStrength": 0.2,
         "barRoundCorners": 1, // 0: No, 1: Yes
-        "fakeScreenRounding": 0 // 0: None | 1: Always | 2: When not fullscreen
+        "fakeScreenRounding": 2 // 0: None | 1: Always | 2: When not fullscreen
     },
     "apps": {
-        "bluetooth": "blueberry",
+        "bluetooth": "better-control --bluetooth",
         "imageViewer": "loupe",
-        "network": "XDG_CURRENT_DESKTOP=\"gnome\" gnome-control-center wifi",
-        "settings": "XDG_CURRENT_DESKTOP=\"gnome\" gnome-control-center",
+        "network": "better-control --wifi",
+        "settings": "better-control",
         "taskManager": "gnome-usage",
         "terminal": "foot" // This is only for shell actions
     },
@@ -176,9 +176,7 @@
     },
     "time": {
         // See https://docs.gtk.org/glib/method.DateTime.format.html
-        // Here's the 12h format: "%I:%M%P"
-        // For seconds, add "%S" and set interval to 1000
-        "format": "%H:%M",
+        "format": "%I:%M %p",
         "interval": 5000,
         "dateFormatLong": "%A, %d/%m", // On bar
         "dateInterval": 5000,
@@ -186,32 +184,38 @@
         "calendarDateFormat": "%d %B %Y"
     },
     "weather": {
-        "city": "",
+        "city": "Halifax, Nova Scotia",
         "preferredUnit": "C" // Either C or F
     },
     "workspaces": {
         "shown": 10
     },
     "dock": {
-        "enabled": true,
-        "hiddenThickness": 40,
+        "enabled": false,
+        "hiddenThickness": 5,
         "pinnedApps": [
-            "microsoft-edge-dev",
-            "org.gnome.Nautilus",
-            "vesktop",
-            "cider",
-            "obs",
-            "resolve",
-            "steam-native",
-            "lutris",
-            "heroic",
-            "ptyxis",
+            "firefox",
+            "org.gnome.Nautilus"
         ],
-        "layer": "dock",
-        "monitorExclusivity": true,
-        "searchPinnedAppIcons": false,
-        "autoHide": [], // Empty array means dock will always be visible
-        "workspaceIsolation": false
+        "ignoredAppsRegex": [],
+        "layer": "top",
+        "monitorExclusivity": true, // Dock will move to other monitor along with focus if enabled
+        "searchPinnedAppIcons": false, // Try to search for the correct icon if the app class isn't an icon name
+        "trigger": [
+            "client-added",
+            "client-removed"
+        ], // client_added, client_move, workspace_active, client_active
+        // Automatically hide dock after `interval` ms since trigger
+        "autoHide": [
+            {
+                "trigger": "client-added",
+                "interval": 500
+            },
+            {
+                "trigger": "client-removed",
+                "interval": 500
+            }
+        ]
     },
     // Longer stuff
     "icons": {
@@ -227,6 +231,16 @@
             "light": "Adwaita"
         },
         "substitutions": {
+            "code-url-handler": "visual-studio-code",
+            "Code": "visual-studio-code",
+            "GitHub Desktop": "github-desktop",
+            "Minecraft* 1.20.1": "minecraft",
+            "gnome-tweaks": "org.gnome.tweaks",
+            "pavucontrol-qt": "pavucontrol",
+            "wps": "wps-office2019-kprometheus",
+            "wpsoffice": "wps-office2019-kprometheus",
+            "footclient": "foot",
+            "zen": "zen-browser",
             "": "image-missing"
         },
         "regexSubstitutions": [

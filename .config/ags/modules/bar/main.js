@@ -1,17 +1,29 @@
 const { Gtk } = imports.gi;
 import Widget from 'resource:///com/github/Aylur/ags/widget.js';
 import Battery from 'resource:///com/github/Aylur/ags/service/battery.js';
+import * as Utils from 'resource:///com/github/Aylur/ags/utils.js';
 
-import WindowTitle from "./normal/spaceleft.js";
 import Indicators from "./normal/spaceright.js";
-import CenterTray from "./normal/spacecenter.js";
+import CenterSpace from "./normal/spacecenter.js";
 import Music from "./normal/music.js";
 import System from "./normal/system.js";
 import { enableClickthrough } from "../.widgetutils/clickthrough.js";
 import { RoundedCorner } from "../.commonwidgets/cairo_roundedcorner.js";
 import { currentShellMode } from '../../variables.js';
-import { BarClock, WeatherWidget, ClockWeatherSeparator } from "./normal/system.js";
-import { setupCursorHover } from "../.widgetutils/cursorhover.js";
+
+const StartButton = () => Widget.EventBox({
+    onPrimaryClick: () => Utils.execAsync(['hyprmenu']).catch(print),
+    child: Widget.Box({
+        css: 'padding: 0; margin: 0;',
+        children: [
+            Widget.Icon({
+                icon: '/home/matt/.config/ags/logo/Arch-linux-logo.png',
+                size: 24,
+                css: 'margin: 0.273rem 0.5rem 0.273rem 0.5rem;',
+            })
+        ]
+    })
+});
 
 const NormalOptionalWorkspaces = async () => {
     try {
@@ -37,25 +49,6 @@ const FocusOptionalWorkspaces = async () => {
     }
 };
 
-const ArchRofiButton = () => Widget.Button({
-    className: 'dock-app-btn dock-app-btn-animate',
-    tooltipText: 'Open HyprMenu',
-    child: Widget.Box({
-        homogeneous: true,
-        className: 'dock-app-icon',
-        child: Widget.Icon({
-            icon: '/home/matt/Pictures/logo/Arch-linux-logo.png',
-            size: 24,
-        }),
-    }),
-    onClicked: () => {
-        import('resource:///com/github/Aylur/ags/utils.js').then(Utils => {
-            Utils.execAsync('hyprmenu').catch(print);
-        });
-    },
-    setup: setupCursorHover,
-});
-
 export const Bar = async (monitor = 0) => {
     const SideModule = (children) => Widget.Box({
         className: 'bar-sidemodule',
@@ -63,50 +56,36 @@ export const Bar = async (monitor = 0) => {
     });
     const normalBarContent = Widget.CenterBox({
         className: 'bar-bg',
-        css: 'margin: 0px; padding: 0px;',
+        css: 'padding: 0; margin: 0;',
         setup: (self) => {
             const styleContext = self.get_style_context();
             const minHeight = styleContext.get_property('min-height', Gtk.StateFlags.NORMAL);
-            // execAsync(['bash', '-c', `hyprctl keyword monitor ,addreserved,${minHeight},0,0,0`]).catch(print);
         },
         startWidget: Widget.Box({
-            children: [ArchRofiButton()],
-            margin: 0,
+            css: 'padding: 0; margin: 0;',
+            children: [
+                StartButton(),
+                Widget.Box({
+                    hexpand: true,
+                    className: 'invisible',
+                })
+            ]
         }),
         centerWidget: Widget.Box({
-            className: 'spacing-h-4',
-            hexpand: true,
+            hpack: 'center',
             children: [
-                CenterTray(monitor),
-            ],
-            margin: 0,
+                CenterSpace(monitor),
+            ]
         }),
         endWidget: Widget.Box({
-            className: 'spacing-h-4',
+            css: 'padding: 0; margin: 0;',
             children: [
                 Widget.Box({
                     hexpand: true,
-                    vexpand: false,
-                    visible: true,
-                    sensitive: false,
-                    css: 'min-width: 150px; opacity: 0;',
+                    className: 'invisible',
                 }),
-                Widget.Box({
-                    className: 'bar-clock-weather-container spacing-h-5',
-                    css: 'padding: 2px 6px; margin: 0px 6px;',
-                    children: [
-                        WeatherWidget(),
-                        ClockWeatherSeparator(),
-                        BarClock(),
-                    ],
-                }),
-                Widget.Box({
-                    hexpand: false,
-                    vexpand: false,
-                    css: 'min-width: 4px;',
-                }),
-            ],
-            margin: 0,
+                Indicators(monitor),
+            ]
         }),
     });
     const focusedBarContent = Widget.CenterBox({
@@ -116,6 +95,10 @@ export const Bar = async (monitor = 0) => {
             className: 'spacing-h-4',
             children: [
                 SideModule([]),
+                Widget.Box({
+                    homogeneous: true,
+                    children: [await FocusOptionalWorkspaces()],
+                }),
                 SideModule([]),
             ]
         }),

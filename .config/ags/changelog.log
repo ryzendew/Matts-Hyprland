@@ -1,0 +1,277 @@
+AGS Configuration Changes Log
+=======================
+
+Based on end-4's Hyprland dotfiles (https://github.com/end-4/dots-hyprland)
+This changelog documents all modifications made to the original configuration.
+
+File Locations Overview
+---------------------
+Main configuration files modified:
+- ~/.config/ags/user_options.jsonc
+- ~/.config/ags/scss/_dock.scss
+- ~/.config/ags/scss/_bar.scss
+- ~/.config/ags/modules/dock/dock.js
+- ~/.config/ags/modules/bar/normal/music.js
+
+1. Initial Dock Setup
+-------------------
+File: ~/.config/ags/user_options.jsonc (Lines 25-45)
+Original:
+```json
+"dock": {
+    "enabled": false,
+    "hiddenThickness": 5,
+    "layer": "top",
+    "pinnedApps": [
+        "firefox",
+        "org.gnome.Nautilus"
+    ]
+}
+```
+
+Modified to:
+```json
+"dock": {
+    "enabled": true,
+    "layer": "bottom",
+    "hiddenThickness": 0,
+    "iconSize": 32,
+    "pinnedApps": [
+        "microsoft-edge-dev",
+        "org.gnome.Nautilus",
+        "vesktop",
+        "cider",
+        "steam-native",
+        "lutris",
+        "heroic",
+        "obs",
+        "com.blackmagicdesign.resolve.desktop",
+        "ptyxis"
+    ],
+    "autoHide": []
+}
+```
+
+2. Visual Style Changes
+---------------------
+A. Dock Styling (scss/_dock.scss, Lines 1-45)
+Original:
+```scss
+.dock-bg {
+    @include large-rounding;
+    @include elevation2;
+    background-color: $layer0;
+    padding: 0.682rem;
+}
+
+.dock-app-icon {
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 40px;
+}
+
+.dock-separator {
+    min-width: 0.136rem;
+    background-color: $outline;
+}
+```
+
+Modified to:
+```scss
+.dock-bg {
+    @include large-rounding;
+    @include elevation2;
+    background-color: $layer0;
+    padding: 0.4rem;
+    border: 2px solid black;
+    border-radius: 1.5rem;
+}
+
+.dock-app-icon {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 32px;
+}
+
+.dock-separator {
+    min-width: 0.068rem;
+    background-color: $outline;
+}
+```
+
+B. Top Bar Border (scss/_bar.scss, Lines 1-10)
+Original:
+```scss
+.bar-bg {
+    background-color: $layer0;
+    min-height: 2.727rem;
+}
+```
+
+Modified to:
+```scss
+.bar-bg {
+    background-color: $layer0;
+    min-height: 2.727rem;
+    border-bottom: 2px solid black;
+}
+```
+
+3. Launcher Icon Resizing
+------------------------
+File: modules/dock/dock.js (Lines 70-85)
+Original:
+```javascript
+const LauncherButton = () => Widget.Button({
+    // ...
+    child: Widget.Icon({
+        icon: '/home/matt/.config/ags/logo/Arch-linux-logo.png',
+        size: 40,
+    })
+    // ...
+});
+```
+
+Modified to:
+```javascript
+const LauncherButton = () => Widget.Button({
+    // ...
+    child: Widget.Icon({
+        icon: '/home/matt/.config/ags/logo/Arch-linux-logo.png',
+        size: 32,
+    })
+    // ...
+});
+```
+
+4. Pin Button and Separators
+---------------------------
+A. Pin Button Removal (modules/dock/dock.js, Lines 47-62)
+- Removed the entire PinButton component and its references:
+```javascript
+const PinButton = () => Widget.Button({
+    className: 'dock-app-btn dock-app-btn-animate',
+    tooltipText: 'Pin Dock',
+    child: Widget.Box({
+        homogeneous: true,
+        className: 'dock-app-icon txt',
+        child: MaterialIcon('push_pin', 'hugeass')
+    }),
+    onClicked: (self) => {
+        isPinned = !isPinned
+        self.className = `${isPinned ? "pinned-dock-app-btn" : "dock-app-btn animate"} dock-app-btn-animate`
+    },
+    setup: setupCursorHover,
+})
+```
+
+B. Separator Modifications (scss/_dock.scss, Lines 40-43)
+- Reduced separator width from 0.136rem to 0.068rem
+- Updated separator styling for better visual consistency
+
+5. Corner Rounding Removal
+-------------------------
+File: user_options.jsonc (Lines 35-42)
+Added:
+```json
+"appearance": {
+    "barRoundCorners": 0,
+    "fakeScreenRounding": 0,
+    "colorScheme": {
+        "enabled": true,
+        "generateFromWallpaper": true,
+        "useSystemScheme": false
+    }
+}
+```
+
+6. Music Widget Optimization
+--------------------------
+File: modules/bar/normal/music.js (Lines 118-160)
+Changes:
+- Moved widget from top bar to dock
+- Modified text display settings:
+```javascript
+const trackTitle = Label({
+    hexpand: true,
+    className: 'txt-smallie bar-music-txt',
+    truncate: 'none',  // Changed from 'end'
+    wrap: false,
+    // Removed maxWidthChars constraint
+});
+```
+
+7. Dock Component Structure
+-------------------------
+File: modules/dock/dock.js (Lines 250-265)
+Final structure:
+```javascript
+export default (monitor = 0) => {
+    const dockContent = Box({
+        className: 'dock-bg spacing-h-5',
+        children: [
+            LauncherButton(),
+            PinnedApps(),
+            DockSeparator(),
+            Taskbar(monitor),
+            DockSeparator(),
+            Music(),
+        ],
+    });
+    return dockContent;
+}
+```
+
+8. Additional Style Modifications
+------------------------------
+A. Dock App Button Styling (scss/_dock.scss, Lines 14-21):
+```scss
+.dock-app-btn {
+    @include normal-rounding;
+    padding: 0.273rem;
+}
+
+.pinned-dock-app-btn {
+    @include normal-rounding;
+    padding: 0.273rem;
+    background-color: $layer0Hover;
+}
+```
+
+B. Hover and Active States (scss/_dock.scss, Lines 23-31):
+```scss
+.dock-app-btn:hover,
+.dock-app-btn:focus {
+    background-color: $layer0Hover;
+}
+
+.dock-app-btn:active {
+    background-color: $layer0Active;
+}
+```
+
+File Locations Reference
+----------------------
+Key configuration files and their purposes:
+- ~/.config/ags/scss/_dock.scss (Lines 1-45): Dock styling and appearance
+- ~/.config/ags/scss/_bar.scss (Lines 1-431): Top bar styling
+- ~/.config/ags/modules/dock/dock.js (Lines 1-265): Dock functionality and structure
+- ~/.config/ags/user_options.jsonc (Lines 1-55): User preferences
+- ~/.config/ags/modules/.configuration/default_options.jsonc: Default configuration
+- ~/.config/ags/modules/bar/normal/music.js (Lines 1-245): Music widget implementation
+
+How to Apply Changes
+------------------
+1. Edit the respective files as shown above
+2. Restart AGS:
+   - Use Super+Ctrl+R (keybind)
+   - Or run: killall ags && ags
+
+Notes
+-----
+- All modifications maintain compatibility with the original AGS framework
+- Changes preserve core functionality while enhancing visual consistency
+- Based on end-4's Hyprland dotfiles (https://github.com/end-4/dots-hyprland)
+- For the original configuration and more information: https://end-4.github.io/dots-hyprland-wiki/en/
+
+Remember to backup your configuration files before making changes. 

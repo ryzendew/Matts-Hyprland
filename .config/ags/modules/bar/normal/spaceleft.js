@@ -10,8 +10,10 @@ const WindowTitle = async () => {
     try {
         const Hyprland = (await import('resource:///com/github/Aylur/ags/service/hyprland.js')).default;
         return Widget.Scrollable({
-            hexpand: true, vexpand: true,
-            hscroll: 'automatic', vscroll: 'never',
+            hexpand: false,
+            vexpand: true,
+            hscroll: 'automatic',
+            vscroll: 'never',
             child: Widget.Box({
                 vertical: true,
                 children: [
@@ -29,9 +31,14 @@ const WindowTitle = async () => {
                         truncate: 'end',
                         maxWidthChars: 1, // Doesn't matter, just needs to be non negative
                         className: 'txt-smallie bar-wintitle-txt',
-                        setup: (self) => self.hook(Hyprland.active.client, label => { // Hyprland.active.client
-                            label.label = Hyprland.active.client.title.length === 0 ? `Workspace ${Hyprland.active.workspace.id}` : Hyprland.active.client.title;
-                        }),
+                        setup: (self) => {
+                            self.hook(Hyprland.active.client, label => { // Hyprland.active.client
+                                label.label = Hyprland.active.client.title.length === 0 ? `Workspace ${Hyprland.active.workspace.id}` : Hyprland.active.client.title;
+                            });
+                            self.hook(Hyprland.active.workspace, label => { // Hyprland.active.client
+                                label.label = Hyprland.active.client.title.length === 0 ? `Workspace ${Hyprland.active.workspace.id}` : Hyprland.active.client.title;
+                            });
+                        }
                     })
                 ]
             })
@@ -69,20 +76,11 @@ export default async (monitor = 0) => {
         child: Widget.Box({
             homogeneous: false,
             children: [
-                Widget.Box({ className: 'bar-corner-spacing' }),
-                Widget.Overlay({
-                    overlays: [
-                        Widget.Box({ hexpand: true }),
-                        Widget.Box({
-                            className: 'bar-sidemodule', hexpand: true,
-                            children: [Widget.Box({
-                                vertical: true,
-                                className: 'bar-space-button',
-                                children: [
-                                    optionalWindowTitleInstance,
-                                ]
-                            })]
-                        }),
+                Widget.Box({
+                    className: 'bar-sidemodule',
+                    hexpand: false,
+                    children: [
+                        optionalWindowTitleInstance,
                     ]
                 })
             ]

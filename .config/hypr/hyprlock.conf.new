@@ -1,7 +1,7 @@
-$text_color = rgba(B4EBFFFF)
-$entry_background_color = rgba(001F2811)
-$entry_border_color = rgba(7F949C55)
-$entry_color = rgba(B4EBFFFF)
+$text_color = rgba(FFDAD6FF)
+$entry_background_color = rgba(41000311)
+$entry_border_color = rgba(896E6C55)
+$entry_color = rgba(FFDAD6FF)
 $font_family = Rubik Light
 $font_family_clock = Rubik Light
 $font_material_symbols = Material Symbols Rounded
@@ -41,6 +41,7 @@ label { # Caps Lock Warning
     valign = center
 }
 
+
 label { # Clock
     monitor =
     text = $TIME
@@ -68,8 +69,6 @@ label { # User
     monitor =
     text =     $USER
     color = $text_color
-    shadow_passes = 1
-    shadow_boost = 0.35
     outline_thickness = 2
     dots_size = 0.2 # Scale of input-field height, 0.2 - 0.8
     dots_spacing = 0.2 # Scale of dots' absolute size, 0.0 - 1.0

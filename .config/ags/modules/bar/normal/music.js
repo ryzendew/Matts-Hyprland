@@ -77,12 +77,8 @@ const BarResource = (name, icon, command, circprogClassName = `bar-batt-circprog
             setup: (self) => self.poll(5000, () => execAsync(['bash', '-c', command])
                 .then((output) => {
                     resourceCircProg.css = `font-size: ${Number(output)}px;`;
-                    if (name.includes('Temp')) {
-                        resourceLabel.label = `${Math.round(Number(output))}°C`;
-                    } else {
-                        resourceLabel.label = `${Math.round(Number(output))}%`;
-                    }
-                    widget.tooltipText = `${name}: ${Math.round(Number(output))}${name.includes('Temp') ? '°C' : '%'}`;
+                    resourceLabel.label = `${Math.round(Number(output))}%`;
+                    widget.tooltipText = `${name}: ${Math.round(Number(output))}%`;
                 }).catch(print))
             ,
         })
@@ -120,48 +116,40 @@ const switchToRelativeWorkspace = async (self, num) => {
 
 
 export default () => {
-    // Create previous track button with consistent styling
-    const prevButton = Button({
-        className: 'bar-music-button',
-        child: MaterialIcon('skip_previous', 'default'),
-        onClicked: () => execAsync('playerctl previous').catch(print),
-        tooltipText: 'Previous Track',
-    });
-    
-    // Create play/pause button with consistent styling
-    const playButton = Button({
-        className: 'bar-music-button',
-        child: Label({
-            className: 'icon-material',
-            setup: (self) => self.hook(Mpris, label => {
-                const mpris = Mpris.getPlayer('');
-                label.label = `${mpris !== null && mpris.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
+    // TODO: use cairo to make button bounce smaller on click, if that's possible
+    const playingState = Box({ // Wrap a box cuz overlay can't have margins itself
+        homogeneous: true,
+        children: [Overlay({
+            child: Box({
+                vpack: 'center',
+                className: 'bar-music-playstate',
+                homogeneous: true,
+                children: [Label({
+                    vpack: 'center',
+                    className: 'bar-music-playstate-txt',
+                    justification: 'center',
+                    setup: (self) => self.hook(Mpris, label => {
+                        const mpris = Mpris.getPlayer('');
+                        label.label = `${mpris !== null && mpris.playBackStatus == 'Playing' ? 'pause' : 'play_arrow'}`;
+                    }),
+                })],
+                setup: (self) => self.hook(Mpris, label => {
+                    const mpris = Mpris.getPlayer('');
+                    if (!mpris) return;
+                    label.toggleClassName('bar-music-playstate-playing', mpris !== null && mpris.playBackStatus == 'Playing');
+                    label.toggleClassName('bar-music-playstate', mpris !== null || mpris.playBackStatus == 'Paused');
+                }),
             }),
-        }),
-        onClicked: () => execAsync('playerctl play-pause').catch(print),
+            overlays: [
+                TrackProgress(),
+            ]
+        })]
     });
-    
-    // Create next track button with consistent styling 
-    const nextButton = Button({
-        className: 'bar-music-button',
-        child: MaterialIcon('skip_next', 'default'),
-        onClicked: () => execAsync('playerctl next').catch(print),
-        tooltipText: 'Next Track',
-    });
-    
-    // Create a container for all music control buttons
-    const musicControls = Box({
-        className: 'bar-music-controls',
-        children: [
-            prevButton,
-            playButton,
-            nextButton,
-        ]
-    });
-    
     const trackTitle = Label({
         hexpand: true,
         className: 'txt-smallie bar-music-txt',
+        truncate: 'none',
+        wrap: false,
         setup: (self) => self.hook(Mpris, label => {
             const mpris = Mpris.getPlayer('');
             if (mpris)
@@ -169,28 +157,79 @@ export default () => {
             else
                 label.label = getString('No media');
         }),
-    });
-    
+    })
     const musicStuff = Box({
-        className: 'spacing-h-5',
+        className: 'spacing-h-10',
         hexpand: true,
         children: [
-            musicControls,
+            playingState,
             trackTitle,
         ]
-    });
-    
+    })
+    const SystemResourcesOrCustomModule = () => {
+        // Check if $XDG_CACHE_HOME/ags/user/scripts/custom-module-poll.sh exists
+        if (GLib.file_test(CUSTOM_MODULE_CONTENT_SCRIPT, GLib.FileTest.EXISTS)) {
+            const interval = Number(Utils.readFile(CUSTOM_MODULE_CONTENT_INTERVAL_FILE)) || 5000;
+            return BarGroup({
+                child: Button({
+                    child: Label({
+                        className: 'txt-smallie txt-onSurfaceVariant',
+                        useMarkup: true,
+                        setup: (self) => Utils.timeout(1, () => {
+                            self.label = exec(CUSTOM_MODULE_CONTENT_SCRIPT);
+                            self.poll(interval, (self) => {
+                                const content = exec(CUSTOM_MODULE_CONTENT_SCRIPT);
+                                self.label = content;
+                            })
+                        })
+                    }),
+                    onPrimaryClickRelease: () => execAsync(CUSTOM_MODULE_LEFTCLICK_SCRIPT).catch(print),
+                    onSecondaryClickRelease: () => execAsync(CUSTOM_MODULE_RIGHTCLICK_SCRIPT).catch(print),
+                    onMiddleClickRelease: () => execAsync(CUSTOM_MODULE_MIDDLECLICK_SCRIPT).catch(print),
+                    onScrollUp: () => execAsync(CUSTOM_MODULE_SCROLLUP_SCRIPT).catch(print),
+                    onScrollDown: () => execAsync(CUSTOM_MODULE_SCROLLDOWN_SCRIPT).catch(print),
+                })
+            });
+        } else return BarGroup({
+            child: Box({
+                children: [
+                    BarResource(getString('RAM Usage'), 'memory', `LANG=C free | awk '/^Mem/ {printf("%.2f\\n", ($3/$2) * 100)}'`,
+                        `bar-ram-circprog ${userOptions.appearance.borderless ? 'bar-ram-circprog-borderless' : ''}`, 'bar-ram-txt', 'bar-ram-icon'),
+                    Revealer({
+                        revealChild: true,
+                        transition: 'slide_left',
+                        transitionDuration: userOptions.animations.durationLarge,
+                        child: Box({
+                            className: 'spacing-h-10 margin-left-10',
+                            children: [
+                                BarResource(getString('Swap Usage'), 'swap_horiz', `LANG=C free | awk '/^Swap/ {if ($2 > 0) printf("%.2f\\n", ($3/$2) * 100); else print "0";}'`,
+                                    `bar-swap-circprog ${userOptions.appearance.borderless ? 'bar-swap-circprog-borderless' : ''}`, 'bar-swap-txt', 'bar-swap-icon'),
+                                BarResource(getString('CPU Usage'), 'settings_motion_mode', `LANG=C top -bn1 | grep Cpu | sed 's/\\,/\\./g' | awk '{print $2}'`,
+                                    `bar-cpu-circprog ${userOptions.appearance.borderless ? 'bar-cpu-circprog-borderless' : ''}`, 'bar-cpu-txt', 'bar-cpu-icon'),
+                            ]
+                        }),
+                        setup: (self) => self.hook(Mpris, label => {
+                            const mpris = Mpris.getPlayer('');
+                            self.revealChild = (!mpris || mpris.playBackStatus !== 'Playing' || userOptions.bar.alwaysShowFullResources);
+                        }),
+                    })
+                ],
+            })
+        });
+    }
     return EventBox({
         onScrollUp: () => adjustVolume('up'),
         onScrollDown: () => adjustVolume('down'),
         child: Box({
             className: 'spacing-h-4',
+            hexpand: true,
             children: [
+                SystemResourcesOrCustomModule(),
                 EventBox({
+                    hexpand: true,
                     child: Box({
-                        className: 'bar-music-container spacing-h-5',
-                        css: 'padding: 2px 8px; margin: 2px 6px;',
-                        children: [musicStuff]
+                        hexpand: true,
+                        child: musicStuff,
                     }),
                     onPrimaryClick: () => showMusicControls.setValue(!showMusicControls.value),
                     onSecondaryClick: () => execAsync(['bash', '-c', 'playerctl next || playerctl position `bc <<< "100 * $(playerctl metadata mpris:length) / 1000000 / 100"` &']).catch(print),
